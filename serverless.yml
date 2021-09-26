@@ -4,9 +4,20 @@ provider:
   name: aws
   runtime: nodejs12.x
   region: ap-northeast-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/Timecards'
 
 package:
   exclude:
+    - script/**
     - .git/**
     - test/**
     - README.md
@@ -17,3 +28,34 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
+
+resources:
+  Resources:
+    timecards:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Timecards
+        AttributeDefinitions:
+          - AttributeName: user
+            AttributeType: S
+          - AttributeName: workspot
+            AttributeType: S
+          - AttributeName: attendance
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user
+            KeyType: HASH
+          - AttributeName: workspot
+            KeyType: RANGE
+        LocalSecondaryIndexes:
+          - IndexName: attendanceIndex
+            KeySchema:
+              - AttributeName: user
+                KeyType: HASH
+              - AttributeName: attendance
+                KeyType: RANGE
+            Projection:
+              ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
