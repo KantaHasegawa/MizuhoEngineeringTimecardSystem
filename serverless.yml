@@ -42,6 +42,8 @@ resources:
             AttributeType: S
           - AttributeName: attendance
             AttributeType: S
+          - AttributeName: admin
+            AttributeType: B
         KeySchema:
           - AttributeName: user
             KeyType: HASH
@@ -53,6 +55,14 @@ resources:
               - AttributeName: user
                 KeyType: HASH
               - AttributeName: attendance
+                KeyType: RANGE
+            Projection:
+              ProjectionType: KEYS_ONLY
+          - IndexName: adminIndex
+            KeySchema:
+              - AttributeName: user
+                KeyType: HASH
+              - AttributeName: admin
                 KeyType: RANGE
             Projection:
               ProjectionType: KEYS_ONLY
