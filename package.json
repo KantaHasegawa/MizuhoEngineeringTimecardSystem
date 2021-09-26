@@ -1,0 +1,16 @@
+{
+  "name": "mizuho-timecard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node local-app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vendia/serverless-express": "^4.3.11",
+    "express": "^4.17.1"
+  }
+}
