@@ -21,9 +21,10 @@ package:
     - .git/**
     - test/**
     - README.md
+    - .env
 
 functions:
-  serverlessTest:
+  timeCard:
     handler: lambda.handler
     events:
       - http: ANY /
@@ -42,8 +43,8 @@ resources:
             AttributeType: S
           - AttributeName: attendance
             AttributeType: S
-          - AttributeName: admin
-            AttributeType: B
+          - AttributeName: role
+            AttributeType: S
         KeySchema:
           - AttributeName: user
             KeyType: HASH
@@ -62,7 +63,7 @@ resources:
             KeySchema:
               - AttributeName: user
                 KeyType: HASH
-              - AttributeName: admin
+              - AttributeName: role
                 KeyType: RANGE
             Projection:
               ProjectionType: KEYS_ONLY

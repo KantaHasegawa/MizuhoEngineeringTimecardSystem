@@ -22,3 +22,4 @@ __pycache__/
 .serverless
 node_modules/
 scripts/
+.env
