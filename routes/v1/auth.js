@@ -1,10 +1,8 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 const AWS = require("aws-sdk");
 const bcrypt = require("bcrypt")
 const jwt = require('jsonwebtoken');
-
-
 
 const dynamoOptions =
   process.env.NODE_ENV === "development"
@@ -14,48 +12,6 @@ const dynamoOptions =
       }
     : {};
 const documentClient = new AWS.DynamoDB.DocumentClient(dynamoOptions);
-
-router.get("/", (req, res) => {
-  const env = process.env.NODE_ENV
-  res.json({ message: `env is ${env}` });
-});
-
-//users
-
-router.get("/users", (req, res) => {
-  documentClient
-    .scan({
-      TableName: "Timecards",
-    })
-    .promise()
-    .then((result) => res.json(result))
-    .catch((e) => res.status(422).json({ errors: e }));
-});
-
-router.post("/signup", async (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  console.log(hashedPassword);
-
-  const params = {
-    user: username,
-    password: hashedPassword,
-    workspot: "user",
-    role: "common",
-  };
-
-  documentClient
-    .put({
-      TableName: "Timecards",
-      Item: params,
-    })
-    .promise()
-    .then((result) => res.json({ message: "insert seccess" }))
-    .catch((e) => res.status(422).json({ errors: e }));
-});
-
-//authentication
 
 router.post("/login", async(req, res) => {
   const username = req.body.username;
@@ -96,19 +52,6 @@ router.post("/token", (req, res) => {
 
 function generateAccessToken(user) {
   return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15s" });
-}
-
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (token == null) return res.sendStatus(401);
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    console.log(err);
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
 }
 
 module.exports = router;

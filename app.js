@@ -13,7 +13,7 @@ app.use(
   })
 );
 
-const router = require("./routes/router");
+const router = require("./routes/v1/index.js");
 
 app.use("/", router);
 
