@@ -43,8 +43,6 @@ resources:
             AttributeType: S
           - AttributeName: attendance
             AttributeType: S
-          - AttributeName: role
-            AttributeType: S
         KeySchema:
           - AttributeName: user
             KeyType: HASH
@@ -58,15 +56,17 @@ resources:
               - AttributeName: attendance
                 KeyType: RANGE
             Projection:
-              ProjectionType: KEYS_ONLY
-          - IndexName: adminIndex
+              ProjectionType: ALL
+        GlobalSecondaryIndexes:
+          - IndexName: usersIndex
             KeySchema:
-              - AttributeName: user
+              - AttributeName: workspot
                 KeyType: HASH
-              - AttributeName: role
-                KeyType: RANGE
             Projection:
-              ProjectionType: KEYS_ONLY
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
