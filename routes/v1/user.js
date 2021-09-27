@@ -65,6 +65,19 @@ router.post("/signup", async (req, res) => {
     .catch((e) => res.status(500).json({ errors: e }));
 });
 
+router.delete("/delete/:name", (req, res) => {
+  const params = {
+    TableName: 'Timecards',
+    Key: {
+      user: "テストユーザー",
+      workspot: "user"
+    }
+  };
+  documentClient.delete(params).promise()
+    .then((result) => res.json({ message: "delete success" }))
+    .catch((e) => res.status(500).json({ errors: e }));
+})
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
