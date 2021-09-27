@@ -24,10 +24,11 @@ router.post("/login", async(req, res) => {
     }
   };
   const result = await documentClient.get(params).promise();
+  console.log(result)
+  if (!Object.keys(result).length) return res.send(404).json({"message":"request user is not found"})
 
   const comparedPassword = await bcrypt.compare(password, result.Item.password);
-
-  if (!comparedPassword) return res.sendStatus(401);
+  if (!comparedPassword) return res.send(401);
 
   const user = {
     user: result.Item.user,
@@ -42,9 +43,9 @@ router.post("/login", async(req, res) => {
 
 router.post("/token", (req, res) => {
   const refreshToken = req.body.token;
-  if (refreshToken == null) return res.sendStatus(401);
+  if (refreshToken == null) return res.send(401);
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.send(403);
     const accessToken = generateAccessToken({ name: user.name });
     res.json({ accessToken: accessToken });
   });
