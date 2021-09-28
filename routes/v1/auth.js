@@ -24,7 +24,6 @@ router.post("/login", async(req, res) => {
     }
   };
   const result = await documentClient.get(params).promise();
-  console.log(result)
   if (!Object.keys(result).length) return res.send(404).json({"message":"request user is not found"})
 
   const comparedPassword = await bcrypt.compare(password, result.Item.password);
@@ -51,8 +50,8 @@ router.post("/token", (req, res) => {
   });
 });
 
-function generateAccessToken(user) {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15s" });
+const generateAccessToken = (user) => {
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 }
 
 module.exports = router;
