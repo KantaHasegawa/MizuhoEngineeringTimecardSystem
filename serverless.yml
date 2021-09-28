@@ -13,7 +13,9 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/Timecards'
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards
+        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards/index/*
 
 package:
   exclude:
