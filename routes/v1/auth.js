@@ -3,15 +3,7 @@ const router = express.Router();
 const AWS = require("aws-sdk");
 const bcrypt = require("bcrypt")
 const jwt = require('jsonwebtoken');
-
-const dynamoOptions =
-  process.env.NODE_ENV === "development"
-    ? {
-        region: "localhost",
-        endpoint: "http://localhost:8000",
-      }
-    : {};
-const documentClient = new AWS.DynamoDB.DocumentClient(dynamoOptions);
+const documentClient = require("../../dbconnect")
 
 router.post("/login", async(req, res) => {
   const username = req.body.username;

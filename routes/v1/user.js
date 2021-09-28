@@ -1,17 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const AWS = require("aws-sdk");
 const bcrypt = require("bcrypt")
 const helper = require("../../helper")
-
-const dynamoOptions =
-  process.env.NODE_ENV === "development"
-    ? {
-      region: "localhost",
-      endpoint: "http://localhost:8000",
-    }
-    : {};
-const documentClient = new AWS.DynamoDB.DocumentClient(dynamoOptions);
+const documentClient = require("../../dbconnect")
 
 router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
     const params = {
@@ -69,7 +60,7 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
   const params = {
     TableName: 'Timecards',
     Key: {
-      user: "テストユーザー",
+      user: req.params.name,
       workspot: "user"
     }
   };
