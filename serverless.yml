@@ -41,28 +41,17 @@ resources:
         AttributeDefinitions:
           - AttributeName: user
             AttributeType: S
-          - AttributeName: workspot
-            AttributeType: S
           - AttributeName: attendance
             AttributeType: S
         KeySchema:
           - AttributeName: user
             KeyType: HASH
-          - AttributeName: workspot
+          - AttributeName: attendance
             KeyType: RANGE
-        LocalSecondaryIndexes:
-          - IndexName: attendanceIndex
-            KeySchema:
-              - AttributeName: user
-                KeyType: HASH
-              - AttributeName: attendance
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
         GlobalSecondaryIndexes:
           - IndexName: usersIndex
             KeySchema:
-              - AttributeName: workspot
+              - AttributeName: attendance
                 KeyType: HASH
             Projection:
               ProjectionType: ALL

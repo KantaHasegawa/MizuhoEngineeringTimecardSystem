@@ -20,5 +20,6 @@ router.get("/api/v1/records", (req, res) => {
 router.use('/api/v1/user', require('./user.js'));
 router.use('/api/v1/auth', require('./auth.js'));
 router.use('/api/v1/workspot', require('./workspot.js'));
+router.use('/api/v1/timecard', require('./timecard.js'));
 
 module.exports = router;

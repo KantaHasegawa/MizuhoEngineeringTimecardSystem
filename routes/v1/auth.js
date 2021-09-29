@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const AWS = require("aws-sdk");
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const documentClient = require("../../dbconnect")
 
