@@ -9,7 +9,7 @@ router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req,
       TableName: "Timecards",
       Key: {
         user: req.params.name,
-        workspot: "user"
+        attendance: "user"
       }
     };
     documentClient.get(params).promise()
@@ -21,9 +21,9 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res)
     const params = {
       TableName: 'Timecards',
       IndexName: 'usersIndex',
-      ExpressionAttributeNames: { '#w': 'workspot' },
+      ExpressionAttributeNames: { '#a': 'attendance' },
       ExpressionAttributeValues: { ':val': 'user' },
-      KeyConditionExpression: '#w = :val'
+      KeyConditionExpression: '#a = :val'
     };
   documentClient.query(params, (err, result) => {
     if (err) {
@@ -42,7 +42,7 @@ router.post("/signup", helper.authenticateToken, helper.adminUserCheck, async (r
   const params = {
     user: username,
     password: hashedPassword,
-    workspot: "user",
+    attendance: "user",
     role: "common",
   };
 
@@ -61,7 +61,7 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     TableName: 'Timecards',
     Key: {
       user: req.params.name,
-      workspot: "user"
+      attendance: "user"
     }
   };
   documentClient.delete(params).promise()

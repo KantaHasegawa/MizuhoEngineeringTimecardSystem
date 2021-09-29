@@ -19,9 +19,8 @@ const geocoder = NodeGeocoder(options);
 router.post("/common", helper.authenticateToken, (req, res) => {
   const params = {
     user: "test",
+    attendance: dayjs().format('YYYYMMDDHHmmss'),
     workspot: "debug spot",
-    // attendance: dayjs().format('YYYYMMDDHHmmss'),
-    attendance: "test",
     leave: "none"
   };
   documentClient

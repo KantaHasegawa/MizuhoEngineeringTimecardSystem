@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const NodeGeocoder = require('node-geocoder');
 const helper = require("../../helper")
-const documentClient = require("../../dbconnect")
+const documentClient = require("../../dbconnect");
+const dayjs = require('dayjs');
+require("dayjs/locale/ja")
+
+dayjs.locale("ja")
 
 const options = {
   provider: 'google',
@@ -14,15 +18,19 @@ const geocoder = NodeGeocoder(options);
 
 router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
   const params = {
-    TableName: "Timecards",
-    Key: {
-      user: "workspot",
-      workspot: req.params.name
-    }
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user', '#w': 'workspot' },
+    ExpressionAttributeValues: { ':userval': 'workspot', ':workspotval': req.params.name },
+    KeyConditionExpression: '#u = :userval',
+    FilterExpression: '#w = :workspotval'
   };
-  documentClient.get(params).promise()
-    .then((result) => res.json(result.Item))
-    .catch((e) => res.status(500).json({ errors: e }))
+  documentClient.query(params, (err, result) => {
+    if (err) {
+      res.status(500).json({ errors: err })
+    } else {
+      res.json(result.Items)
+    }
+  })
 })
 
 router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
@@ -48,6 +56,7 @@ router.post("/new", helper.authenticateToken, helper.adminUserCheck, async (req,
     const result = await geocoder.reverse({ lat: lat, lon: lon });
     const params = {
       user: "workspot",
+      attendance: dayjs().format('YYYYMMDDHHmmss'),
       workspot: result[0].formattedAddress.split("、")[1],
       latitude: result[0].latitude,
       longitude: result[0].longitude
@@ -65,12 +74,12 @@ router.post("/new", helper.authenticateToken, helper.adminUserCheck, async (req,
   }
 })
 
-router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.delete("/delete/:attendance", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
   const params = {
     TableName: 'Timecards',
     Key: {
       user: "workspot",
-      workspot: req.params.name
+      attendance: req.params.attendance
     }
   };
   documentClient.delete(params).promise()

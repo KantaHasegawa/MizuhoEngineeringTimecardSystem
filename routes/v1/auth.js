@@ -11,7 +11,7 @@ router.post("/login", async(req, res) => {
     TableName: "Timecards",
     Key: {
       user: username,
-      workspot: "user"
+      attendance: "user"
     }
   };
   const result = await documentClient.get(params).promise();
