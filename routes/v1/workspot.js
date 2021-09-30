@@ -86,4 +86,44 @@ router.delete("/delete/:attendance", helper.authenticateToken, helper.adminUserC
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
+router.post("/relation/new", async (req, res) => {
+  const users = req.body.users
+  const workspot = req.body.workspot
+  try {
+    for (let user of users) {
+      let params = {
+        user: user,
+        attendance: `relation ${workspot}`,
+        workspot: workspot
+      }
+      await documentClient
+        .put({
+          TableName: "Timecards",
+          Item: params,
+        }).promise()
+    }
+  } catch (e) {
+    return res.status(500).json(e)
+  }
+  res.json({"message":"insert success"})
+})
+
+router.get("/relation/index/:workspot", (req, res) => {
+  const workspot = req.params.workspot;
+  const params = {
+    TableName: 'Timecards',
+    IndexName: 'usersIndex',
+    ExpressionAttributeNames: { '#a': 'attendance' },
+    ExpressionAttributeValues: { ':val': `relation ${workspot}` },
+    KeyConditionExpression: '#a = :val'
+  };
+  documentClient.query(params, (err, result) => {
+    if (err) {
+      res.status(500).json({ errors: err })
+    } else {
+      res.json(result.Items)
+    }
+  })
+})
+
 module.exports = router;

@@ -69,4 +69,43 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
+router.post("/relation/new", async (req, res) => {
+  const user = req.body.user
+  const workspots = req.body.workspots
+  try {
+    for (let workspot of workspots) {
+      let params = {
+        user: user,
+        attendance: `relation ${workspot}`,
+        workspot: workspot
+      }
+      await documentClient
+        .put({
+          TableName: "Timecards",
+          Item: params,
+        }).promise()
+    }
+  } catch (e) {
+    return res.status(500).json(e.message)
+  }
+  res.json({ "message": "insert success" })
+})
+
+router.get("/relation/index/:username", (req, res) => {
+  const username = req.params.username;
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u':'user', '#a': 'attendance' },
+    ExpressionAttributeValues: { ':uval':username ,':aval': "relation" },
+    KeyConditionExpression: '#u = :uval AND begins_with(#a, :aval)'
+  }
+  documentClient.query(params, (err, result) => {
+    if (err) {
+      res.status(500).json({ errors: err })
+    } else {
+      res.json(result.Items)
+    }
+  })
+})
+
 module.exports = router;
