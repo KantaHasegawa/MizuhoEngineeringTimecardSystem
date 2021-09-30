@@ -21,7 +21,7 @@ router.post("/login", async(req, res) => {
   if (!comparedPassword) return res.send(401);
 
   const user = {
-    user: result.Item.user,
+    name: result.Item.user,
     role: result.Item.role,
   };
   const accessToken = generateAccessToken(user);
@@ -36,7 +36,10 @@ router.post("/token", (req, res) => {
   if (refreshToken == null) return res.send(401);
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
     if (err) return res.send(403);
-    const accessToken = generateAccessToken({ name: user.name });
+    const accessToken = generateAccessToken({
+      name: user.name,
+      role: user.role,
+    });
     res.json({ accessToken: accessToken });
   });
 });

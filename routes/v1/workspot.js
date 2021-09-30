@@ -5,7 +5,6 @@ const helper = require("../../helper")
 const documentClient = require("../../dbconnect");
 const dayjs = require('dayjs');
 require("dayjs/locale/ja")
-
 dayjs.locale("ja")
 
 const options = {
