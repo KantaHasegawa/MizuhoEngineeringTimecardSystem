@@ -41,6 +41,18 @@ const checkUserLocation = async (req, res, next) => {
   }
 }
 
+router.get("/index/:username", (req, res) => {
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
+    ExpressionAttributeValues: { ':userval': req.params.username, ':attendanceval': "2" },
+    KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
+  };
+  documentClient.query(params).promise()
+    .then((result) => { res.json(result.Items) })
+    .catch((e) => res.status(500).json({ errors: e }));
+})
+
 router.get("/check/:username", async (req, res) => {
   const params = {
     TableName: 'Timecards',
