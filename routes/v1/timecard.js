@@ -62,11 +62,11 @@ const checkUserLocation = async (req, res, next) => {
   }
 }
 
-router.get("/index/:username", (req, res) => {
+router.get("/index/:username/:year/:month", (req, res) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
-    ExpressionAttributeValues: { ':userval': req.params.username, ':attendanceval': "2" },
+    ExpressionAttributeValues: { ':userval': req.params.username, ':attendanceval': `${req.params.year}${req.params.month}` },
     KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
   };
   documentClient.query(params).promise()
@@ -74,7 +74,7 @@ router.get("/index/:username", (req, res) => {
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.get("/check/:username", async (req, res) => {
+router.get("/latest/:username", async (req, res) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
