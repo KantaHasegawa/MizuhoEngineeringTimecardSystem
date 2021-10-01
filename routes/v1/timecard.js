@@ -4,8 +4,12 @@ const helper = require("../../helper")
 const { GeoPosition } = require('geo-position.ts');
 const documentClient = require("../../dbconnect")
 const dayjs = require("dayjs")
+const isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
+const isSameOrBefore = require('dayjs/plugin/isSameOrBefore');
 require("dayjs/locale/ja")
 dayjs.locale("ja")
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const calculateWorkingTime = (attendance) => {
   const regularAttendanceTime = dayjs(`${attendance.slice(0, 8)}0800`)
@@ -13,19 +17,43 @@ const calculateWorkingTime = (attendance) => {
   const leave = dayjs().format('YYYYMMDDHHmmss')
   const dayjsObjLeave = dayjs(leave)
   const dayjsObjAttendance = dayjs(attendance)
-  const rest = 1
   const workTime = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
-  const early =  regularAttendanceTime.diff(dayjsObjAttendance, 'minute') > 0 ? regularAttendanceTime.diff(dayjsObjAttendance, 'minute') : 0
-  const late = dayjsObjLeave.diff(regularLeaveTime, 'minute') > 0 ? dayjsObjLeave.diff(regularLeaveTime, 'minute') : 0
-  const overwork = (workTime - rest) > 8 ? (workTime - rest - 8) : 0
-  const irregularWorkTime = early + late + overwork
-  const regularWorkTime = workTime - rest - irregularWorkTime
-  return {
-    leave: leave,
-    rest: rest,
-    regularWorkTime,
-    irregularWorkTime
-  };
+  const rest = workTime >= 60 ? 60 : 0
+
+  const early = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
+    ? workTime
+    : regularAttendanceTime.diff(dayjsObjAttendance, 'minute') > 0
+      ? dregularAttendanceTime.diff(dayjsObjAttendance, 'minute')
+      : 0
+
+  const late = dayjsObjAttendance.isSameOrAfter(regularLeaveTime)
+    ? workTime
+    : dayjsObjLeave.diff(regularLeaveTime, 'minute') > 0
+      ? dayjsObjLeave.diff(regularLeaveTime, 'minute')
+      : 0
+
+  if (workTime - rest - early - late < 0) {
+    const irregularRest = 0 - (workTime - rest - early - late);
+    const regularWorkTime = 0
+    const irregularWorkTime = rest + early - irregularRest;
+    return {
+      workTime: workTime,
+      leave: leave,
+      rest: rest,
+      regularWorkTime,
+      irregularWorkTime
+    };
+  } else {
+    const irregularWorkTime = early + late
+    const regularWorkTime = workTime - irregularWorkTime - rest
+    return {
+      workTime: workTime,
+      leave: leave,
+      rest: rest,
+      regularWorkTime,
+      irregularWorkTime
+    };
+  }
 }
 
 const checkUserLocation = async (req, res, next) => {
@@ -103,6 +131,7 @@ router.post("/common", helper.authenticateToken, checkUserLocation, (req, res) =
           workspot: req.userLocation,
           leave: "none",
           rest: 0,
+          workTime: 0,
           regularWorkTime: 0,
           irregularWorkTime: 0
         };
@@ -122,9 +151,9 @@ router.post("/common", helper.authenticateToken, checkUserLocation, (req, res) =
             user: req.user.name,
             attendance: latestRecord.attendance
           },
-          ExpressionAttributeNames: { '#l': 'leave', '#r': 'rest', '#g': 'regularWorkTime', '#i': 'irregularWorkTime' },
-          ExpressionAttributeValues: { ':lval': results.leave, ':rval': results.rest, ':gval': results.regularWorkTime, ':ival': results.irregularWorkTime },
-          UpdateExpression: 'SET #l = :lval, #r = :rval, #g = :gval, #i = :ival'
+          ExpressionAttributeNames: { '#l': 'leave', '#r': 'rest', '#w': 'workTime', '#g': 'regularWorkTime', '#i': 'irregularWorkTime' },
+          ExpressionAttributeValues: { ':lval': results.leave, ':rval': results.rest, ':wval': results.workTime, ':gval': results.regularWorkTime, ':ival': results.irregularWorkTime },
+          UpdateExpression: 'SET #l = :lval, #r = :rval, #w = :wval, #g = :gval, #i = :ival'
         }
         documentClient.update(params).promise()
           .then((result) => res.json({ "message": "update success" }))
