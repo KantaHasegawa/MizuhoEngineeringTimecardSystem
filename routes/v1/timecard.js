@@ -7,6 +7,27 @@ const dayjs = require("dayjs")
 require("dayjs/locale/ja")
 dayjs.locale("ja")
 
+const calculateWorkingTime = (attendance) => {
+  const regularAttendanceTime = dayjs(`${attendance.slice(0, 8)}0800`)
+  const regularLeaveTime = dayjs(`${attendance.slice(0, 8)}1700`)
+  const leave = dayjs().format('YYYYMMDDHHmmss')
+  const dayjsObjLeave = dayjs(leave)
+  const dayjsObjAttendance = dayjs(attendance)
+  const rest = 1
+  const workTime = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
+  const early =  regularAttendanceTime.diff(dayjsObjAttendance, 'minute') > 0 ? regularAttendanceTime.diff(dayjsObjAttendance, 'minute') : 0
+  const late = dayjsObjLeave.diff(regularLeaveTime, 'minute') > 0 ? dayjsObjLeave.diff(regularLeaveTime, 'minute') : 0
+  const overwork = (workTime - rest) > 8 ? (workTime - rest - 8) : 0
+  const irregularWorkTime = early + late + overwork
+  const regularWorkTime = workTime - rest - irregularWorkTime
+  return {
+    leave: leave,
+    rest: rest,
+    regularWorkTime,
+    irregularWorkTime
+  };
+}
+
 const checkUserLocation = async (req, res, next) => {
   const username = req.user.name;
   const params = {
@@ -80,7 +101,10 @@ router.post("/common", helper.authenticateToken, checkUserLocation, (req, res) =
           user: req.user.name,
           attendance: dayjs().format('YYYYMMDDHHmmss'),
           workspot: req.userLocation,
-          leave: "none"
+          leave: "none",
+          rest: 0,
+          regularWorkTime: 0,
+          irregularWorkTime: 0
         };
         documentClient
           .put({
@@ -91,15 +115,16 @@ router.post("/common", helper.authenticateToken, checkUserLocation, (req, res) =
           .then((result) => res.json({ "message": "insert success" }))
           .catch((e) => res.status(500).json({ errors: e }));
       } else {
+        const results = calculateWorkingTime(latestRecord.attendance)
         let params = {
           TableName: "Timecards",
           Key:{
             user: req.user.name,
             attendance: latestRecord.attendance
           },
-          ExpressionAttributeNames: { '#l': 'leave' },
-          ExpressionAttributeValues: { ':val': dayjs().format('YYYYMMDDHHmmss') },
-          UpdateExpression: 'SET #l = :val'
+          ExpressionAttributeNames: { '#l': 'leave', '#r': 'rest', '#g': 'regularWorkTime', '#i': 'irregularWorkTime' },
+          ExpressionAttributeValues: { ':lval': results.leave, ':rval': results.rest, ':gval': results.regularWorkTime, ':ival': results.irregularWorkTime },
+          UpdateExpression: 'SET #l = :lval, #r = :rval, #g = :gval, #i = :ival'
         }
         documentClient.update(params).promise()
           .then((result) => res.json({ "message": "update success" }))
