@@ -1,19 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const NodeGeocoder = require('node-geocoder');
+const geocoder = require("../../gecorderSetting")
 const helper = require("../../helper")
 const documentClient = require("../../dbconnect");
 const dayjs = require('dayjs');
 require("dayjs/locale/ja")
 dayjs.locale("ja")
-
-const options = {
-  provider: 'google',
-  language: 'ja',
-  apiKey: process.env.GOOGLE_API_KEY,
-  formatter: null
-};
-const geocoder = NodeGeocoder(options);
 
 router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
   const params = {
@@ -86,26 +78,40 @@ router.delete("/delete/:attendance", helper.authenticateToken, helper.adminUserC
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/new", async (req, res) => {
+router.post("/relation/update", async (req, res) => {
   const users = req.body.users
   const workspot = req.body.workspot
   try {
+    const result = await geocoder.geocode(workspot)
     for (let user of users) {
-      let params = {
-        user: user,
-        attendance: `relation ${workspot}`,
-        workspot: workspot
+      if (user.delete === "true") {
+        let params = {
+          TableName: 'Timecards',
+          Key: {
+            user: user.name,
+            attendance: `relation ${workspot}`
+          }
+        };
+        await documentClient.delete(params).promise();
+      } else {
+        let params = {
+          user: user,
+          attendance: `relation ${workspot}`,
+          workspot: workspot,
+          latitude: result[0].latitude,
+          longitude: result[0].longitude
+        }
+        await documentClient
+          .put({
+            TableName: "Timecards",
+            Item: params,
+          }).promise()
       }
-      await documentClient
-        .put({
-          TableName: "Timecards",
-          Item: params,
-        }).promise()
     }
   } catch (e) {
     return res.status(500).json(e)
   }
-  res.json({"message":"insert success"})
+  res.json({"message":"update success"})
 })
 
 router.get("/relation/index/:workspot", (req, res) => {

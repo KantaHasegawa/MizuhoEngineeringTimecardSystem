@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt")
 const helper = require("../../helper")
 const documentClient = require("../../dbconnect")
+const geocoder = require("../../gecorderSetting")
 
 router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
     const params = {
@@ -69,21 +70,35 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/new", async (req, res) => {
+router.post("/relation/update", async (req, res) => {
   const user = req.body.user
   const workspots = req.body.workspots
   try {
     for (let workspot of workspots) {
-      let params = {
-        user: user,
-        attendance: `relation ${workspot}`,
-        workspot: workspot
+      if (workspot.delete === "true") {
+        let params = {
+          TableName: 'Timecards',
+          Key: {
+            user: user,
+            attendance: `relation ${workspot.name}`
+          }
+        };
+        await documentClient.delete(params).promise();
+      } else {
+        const result = await geocoder.geocode(workspot.name)
+        let params = {
+          user: user,
+          attendance: `relation ${workspot.name}`,
+          workspot: workspot.name,
+          latitude: result[0].latitude,
+          longitude: result[0].longitude
+        }
+        await documentClient
+          .put({
+            TableName: "Timecards",
+            Item: params,
+          }).promise()
       }
-      await documentClient
-        .put({
-          TableName: "Timecards",
-          Item: params,
-        }).promise()
     }
   } catch (e) {
     return res.status(500).json(e.message)
