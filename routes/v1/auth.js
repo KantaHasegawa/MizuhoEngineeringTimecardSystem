@@ -15,11 +15,15 @@ router.post("/login", async(req, res) => {
     }
   };
   const result = await documentClient.get(params).promise();
-  if (!Object.keys(result).length) return res.send(404).json({"message":"request user is not found"})
-
+  if (!Object.keys(result).length) {
+    res.send(404).json({ "message": "request user is not found" })
+    return;
+  }
   const comparedPassword = await bcrypt.compare(password, result.Item.password);
-  if (!comparedPassword) return res.send(401);
-
+  if (!comparedPassword) {
+    res.send(401);
+    return
+  }
   const user = {
     name: result.Item.user,
     role: result.Item.role,
