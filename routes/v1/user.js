@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt")
 const helper = require("../../helper")
 const documentClient = require("../../dbconnect")
 const geocoder = require("../../gecorderSetting")
+const { check, validationResult } = require('express-validator');
 
 router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
     const params = {
@@ -35,7 +36,30 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res)
     })
 });
 
-router.post("/signup", helper.authenticateToken, helper.adminUserCheck, async (req, res) => {
+router.post("/signup", helper.authenticateToken, helper.adminUserCheck, [
+  check("username").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$").custom(value => {
+    const params = {
+      TableName: "Timecards",
+      Key: {
+        user: value,
+        attendance: "user"
+      }
+    };
+    return documentClient.get(params).promise().then((result) => {
+      if (!!Object.keys(result).length) {
+        throw new Error('このユーザー名は既に使用されています');
+      }
+      return true
+    })
+  }),
+  check("password").not().isEmpty().isAlphanumeric().isLength({ min: 4, max: 15 })
+],
+  async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   const username = req.body.username;
   const password = req.body.password;
   const hashedPassword = await bcrypt.hash(password, 10);

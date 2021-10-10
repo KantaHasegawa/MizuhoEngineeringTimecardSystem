@@ -4,6 +4,7 @@ const helper = require("../../helper")
 const { GeoPosition } = require('geo-position.ts');
 const documentClient = require("../../dbconnect")
 const XlsxPopulate = require("xlsx-populate");
+const { check, validationResult } = require('express-validator');
 const dayjs = require("dayjs")
 const isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
 const isSameOrBefore = require('dayjs/plugin/isSameOrBefore');
@@ -163,11 +164,43 @@ router.post("/common", helper.authenticateToken, checkUserLocation, (req, res) =
     })
 })
 
-router.post("/admin/new", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.post("/admin/new", helper.authenticateToken, helper.adminUserCheck, [
+  check("user").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$"),
+  check("attendance").not().isEmpty().isNumeric().isLength({ min: 14, max: 14 }),
+  check("leave").custom((value, { req }) => {
+    const dayjsObjLeave = dayjs(value)
+    const dayjsObjAttendance = dayjs(req.body.attendance)
+    if (value) {
+      if (value.length !== 14) throw new Error('無効な日付です');
+      if (dayjsObjLeave.isSameOrBefore(dayjsObjAttendance)) throw new Error("無効な退勤時間です")
+      return true
+    } else {
+      return true
+    }
+  }),
+  check("workspot").not().isEmpty().custom((value) => {
+    const params = {
+      TableName: 'Timecards',
+      ExpressionAttributeNames: { '#u': 'user', '#w':'workspot' },
+      ExpressionAttributeValues: { ':uval': 'workspot',':wval': value },
+      KeyConditionExpression: '#u = :uval',
+      FilterExpression: '#w = :wval'
+    };
+    return documentClient.query(params).promise().then((results) => {
+      if (!Object.keys(results.Items).length) throw new Error('登録されていない勤務地です')
+      return true
+    })
+  })
+],
+  (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
   const params = {
     user: req.body.user,
     attendance: req.body.attendance,
-    workspot: "debug spot",
+    workspot: req.body.workspot,
     leave: req.body.leave || "none"
   };
   documentClient
