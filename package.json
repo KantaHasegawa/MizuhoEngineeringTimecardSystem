@@ -20,8 +20,6 @@
     "jsonwebtoken": "^8.5.1",
     "node-geocoder": "^3.27.0",
     "nodemon": "^2.0.13",
-    "xlsx": "^0.17.2",
-    "xlsx-populate": "^1.21.0",
-    "xlsx-populate-wrapper": "^1.0.9"
+    "xlsx-populate": "^1.21.0"
   }
 }
