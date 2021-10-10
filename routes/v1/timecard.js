@@ -3,6 +3,7 @@ const router = express.Router();
 const helper = require("../../helper")
 const { GeoPosition } = require('geo-position.ts');
 const documentClient = require("../../dbconnect")
+const XlsxPopulate = require("xlsx-populate");
 const dayjs = require("dayjs")
 const isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
 const isSameOrBefore = require('dayjs/plugin/isSameOrBefore');
@@ -190,6 +191,35 @@ router.delete("/admin/delete", helper.authenticateToken, helper.adminUserCheck,(
   documentClient.delete(params).promise()
     .then((result) => res.json({ message: "delete success" }))
     .catch((e) => res.status(500).json({ errors: e }));
+})
+
+router.get("/excel/:username/:year/:month", async(req, res) => {
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
+    ExpressionAttributeValues: { ':userval': req.params.username, ':attendanceval': `${req.params.year}${req.params.month}` },
+    KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
+  };
+  try {
+    const workbook = await XlsxPopulate.fromFileAsync("public/timecard_template.xlsx")
+    const sheet1 = workbook.sheet("Sheet1")
+    const results = await documentClient.query(params).promise()
+    const timecards = results.Items
+    console.log(timecards)
+    sheet1.cell("B3").value(req.params.username);
+    sheet1.cell("B4").value(`${req.params.year}年 ${req.params.month}月`);
+    for (timecard of timecards) {
+      const row = Number(timecard.attendance.slice(6, 8)) + 5
+      sheet1.cell(`B${row}`).value(timecard.workTime);
+      sheet1.cell(`C${row}`).value(timecard.regularWorkTime);
+      sheet1.cell(`D${row}`).value(timecard.irregularWorkTime);
+      sheet1.cell(`E${row}`).value(timecard.rest);
+    }
+    await workbook.toFileAsync(`public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`)
+    res.download(`public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`)
+  } catch (e) {
+    res.status(501).json(e.message)
+  }
 })
 
 module.exports = router;

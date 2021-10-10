@@ -17,6 +17,7 @@ var/
 *.egg
 .idea/
 __pycache__/
+public/tmp/
 
 # Serverless directories
 .serverless

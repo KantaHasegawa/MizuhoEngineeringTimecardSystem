@@ -95,7 +95,7 @@ router.post("/relation/update", async (req, res) => {
         await documentClient.delete(params).promise();
       } else {
         let params = {
-          user: user,
+          user: user.name,
           attendance: `relation ${workspot}`,
           workspot: workspot,
           latitude: result[0].latitude,
