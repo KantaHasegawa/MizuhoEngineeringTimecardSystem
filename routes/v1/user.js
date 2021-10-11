@@ -5,8 +5,10 @@ const helper = require("../../helper")
 const documentClient = require("../../dbconnect")
 const geocoder = require("../../gecorderSetting")
 const { check, validationResult } = require('express-validator');
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: false });
 
-router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
     const params = {
       TableName: "Timecards",
       Key: {
@@ -15,11 +17,11 @@ router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req,
       }
     };
     documentClient.get(params).promise()
-      .then((result) => res.json(result.Item))
+      .then((result) => res.json({ "user": result.Item, "csrfToken": req.csrfToken() }))
       .catch((e) => res.status(500).json({ errors : e}))
   })
 
-router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
     const params = {
       TableName: 'Timecards',
       IndexName: 'usersIndex',
@@ -31,12 +33,12 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res)
     if (err) {
       res.status(500).json({errors: err})
     } else {
-      res.json(result.Items)
+      res.json({ "users": result.Items,"csrfToken":req.csrfToken() })
       }
     })
 });
 
-router.post("/signup", helper.authenticateToken, helper.adminUserCheck, [
+router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProtection, [
   check("username").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$").custom(value => {
     const params = {
       TableName: "Timecards",
@@ -77,11 +79,11 @@ router.post("/signup", helper.authenticateToken, helper.adminUserCheck, [
       Item: params,
     })
     .promise()
-    .then((result) => res.json({ message: "insert seccess" }))
+    .then((result) => res.json({ message: "insert seccess", "csrfToken": req.csrfToken() }))
     .catch((e) => res.status(500).json({ errors: e }));
 });
 
-router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -90,11 +92,11 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     }
   };
   documentClient.delete(params).promise()
-    .then((result) => res.json({ message: "delete success" }))
+    .then((result) => res.json({ message: "delete success","csrfToken": req.csrfToken() }))
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/update", async (req, res) => {
+router.post("/relation/update", helper.authenticateToken, helper.adminUserCheck, csrfProtection, async (req, res) => {
   const user = req.body.user
   const workspots = req.body.workspots
   try {
@@ -127,10 +129,10 @@ router.post("/relation/update", async (req, res) => {
   } catch (e) {
     return res.status(500).json(e.message)
   }
-  res.json({ "message": "insert success" })
+  res.json({ "message": "insert success", "csrfToken": req.csrfToken() })
 })
 
-router.get("/relation/index/:username", (req, res) => {
+router.get("/relation/index/:username", csrfProtection, (req, res) => {
   const username = req.params.username;
   const params = {
     TableName: 'Timecards',
@@ -142,7 +144,7 @@ router.get("/relation/index/:username", (req, res) => {
     if (err) {
       res.status(500).json({ errors: err })
     } else {
-      res.json(result.Items)
+      res.json({ "relations": result.Items, "csrfToken": req.csrfToken() })
     }
   })
 })
