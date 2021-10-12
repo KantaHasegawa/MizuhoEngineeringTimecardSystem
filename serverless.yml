@@ -22,6 +22,7 @@ package:
     - script/**
     - .git/**
     - test/**
+    - src/**
     - README.md
     - .env
 
