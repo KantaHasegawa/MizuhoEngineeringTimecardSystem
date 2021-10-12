@@ -1,13 +1,13 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const geocoder = require("../../gecorderSetting")
-const helper = require("../../helper")
-const documentClient = require("../../dbconnect");
+import geocoder from "../../gecorderSetting";
+import {adminUserCheck, authenticateToken} from "../../helper";
+import documentClient from "../../dbconnect";
 const dayjs = require('dayjs');
 require("dayjs/locale/ja")
 dayjs.locale("ja")
 
-router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.get("/show/:name", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#w': 'workspot' },
@@ -24,7 +24,7 @@ router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, (req,
   })
 })
 
-router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.get("/index", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user' },
@@ -40,11 +40,11 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, (req, res)
   })
 })
 
-router.post("/new", helper.authenticateToken, helper.adminUserCheck, async (req, res) => {
+router.post("/new", authenticateToken, adminUserCheck, async (req: express.Request, res: express.Response) => {
   const lat = req.body.lat;
   const lon = req.body.lon;
   try {
-    const result = await geocoder.reverse({ lat: lat, lon: lon });
+    const result:any = await geocoder.reverse({ lat: lat, lon: lon });
     const params = {
       user: "workspot",
       attendance: dayjs().format('YYYYMMDDHHmmss'),
@@ -65,7 +65,7 @@ router.post("/new", helper.authenticateToken, helper.adminUserCheck, async (req,
   }
 })
 
-router.delete("/delete/:attendance", helper.authenticateToken, helper.adminUserCheck, (req, res) => {
+router.delete("/delete/:attendance", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -78,7 +78,7 @@ router.delete("/delete/:attendance", helper.authenticateToken, helper.adminUserC
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/update", async (req, res) => {
+router.post("/relation/update", async (req: express.Request, res: express.Response) => {
   const users = req.body.users
   const workspot = req.body.workspot
   try {
@@ -114,7 +114,7 @@ router.post("/relation/update", async (req, res) => {
   res.json({"message":"update success"})
 })
 
-router.get("/relation/index/:workspot", (req, res) => {
+router.get("/relation/index/:workspot", (req: express.Request, res: express.Response) => {
   const workspot = req.params.workspot;
   const params = {
     TableName: 'Timecards',

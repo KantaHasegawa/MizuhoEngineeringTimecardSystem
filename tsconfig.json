@@ -5,11 +5,15 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "strict": true,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false
   },
   "include": [
     "./src/**/*"
+  ],
+  "typeRoots": [
+    "src/@types",
+    "node_modules/@types"
   ]
 }

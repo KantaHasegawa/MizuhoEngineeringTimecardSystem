@@ -1,6 +1,7 @@
-const NodeGeocoder = require('node-geocoder');
+import NodeGeocoder from 'node-geocoder';
 
-const options = {
+
+const options: NodeGeocoder.Options = {
   provider: 'google',
   language: 'ja',
   apiKey: process.env.GOOGLE_API_KEY,
@@ -9,4 +10,4 @@ const options = {
 
 const geocoder = NodeGeocoder(options);
 
-module.exports = geocoder;
+export default geocoder;

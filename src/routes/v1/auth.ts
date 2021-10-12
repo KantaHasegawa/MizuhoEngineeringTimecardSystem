@@ -1,10 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
-const documentClient = require("../../dbconnect")
+import documentClient from "../../dbconnect";
 
-router.post("/login", async(req, res) => {
+router.post("/login", async (req: express.Request, res: express.Response) => {
   const username = req.body.username;
   const password = req.body.password;
   const params = {
@@ -14,7 +14,7 @@ router.post("/login", async(req, res) => {
       attendance: "user"
     }
   };
-  const result = await documentClient.get(params).promise();
+  const result: any = await documentClient.get(params).promise();
   if (!Object.keys(result).length) {
     res.send(404).json({ "message": "request user is not found" })
     return;
@@ -35,20 +35,21 @@ router.post("/login", async(req, res) => {
   res.json({ accessToken: accessToken, refreshToken: refreshToken });
 });
 
-router.post("/token", (req, res) => {
+router.post("/token", (req: express.Request, res: express.Response) => {
   const refreshToken = req.body.token;
   if (refreshToken == null) return res.send(401);
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err: any, user: any) => {
     if (err) return res.send(403);
     const accessToken = generateAccessToken({
       name: user.name,
       role: user.role,
     });
-    res.json({ accessToken: accessToken });
+    return res.json({ accessToken: accessToken });
   });
+  return
 });
 
-const generateAccessToken = (user) => {
+const generateAccessToken = (user: any) => {
   return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 }
 

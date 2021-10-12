@@ -1,13 +1,23 @@
-const express = require("express");
+import express from 'express';
 const session = require('express-session');
-const app = express();
-const router = require("./routes/v1/index.js");
+const app: express.Express = express()
+const router = require("./routes/v1/index");
 
 if (process.env.NODE_ENV === "development") {
   require('dotenv').config();
 }
 
-const sess = {
+interface ISess {
+  secret: String,
+  cookie: {
+    maxAge: Number,
+    secure?: Boolean
+  },
+  resave: Boolean,
+  saveUninitialized: Boolean,
+}
+
+const sess: ISess = {
   secret: 'mizuhosecret',
   cookie: { maxAge: 60000 },
   resave: false,
@@ -31,4 +41,4 @@ app.use(session(sess));
 
 app.use("/", router);
 
-module.exports = app;
+export default app;

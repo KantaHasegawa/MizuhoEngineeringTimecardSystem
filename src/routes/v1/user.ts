@@ -1,14 +1,14 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 const bcrypt = require("bcrypt")
 const helper = require("../../helper")
-const documentClient = require("../../dbconnect")
+import documentClient from "../../dbconnect";
 const geocoder = require("../../gecorderSetting")
-const { check, validationResult } = require('express-validator');
-const csrf = require('csurf');
+import { check, validationResult } from 'express-validator';
+import csrf from 'csurf';
 const csrfProtection = csrf({ cookie: false });
 
-router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
+router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
     const params = {
       TableName: "Timecards",
       Key: {
@@ -21,7 +21,7 @@ router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfP
       .catch((e) => res.status(500).json({ errors : e}))
   })
 
-router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
+router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
     const params = {
       TableName: 'Timecards',
       IndexName: 'usersIndex',
@@ -29,13 +29,11 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtec
       ExpressionAttributeValues: { ':val': 'user' },
       KeyConditionExpression: '#a = :val'
     };
-  documentClient.query(params, (err, result) => {
-    if (err) {
-      res.status(500).json({errors: err})
-    } else {
-      res.json({ "users": result.Items,"csrfToken":req.csrfToken() })
-      }
-    })
+  documentClient.query(params).promise()
+    .then((result) => {res.json({ "users": result.Items, "csrfToken": req.csrfToken() })})
+    .catch((e) => {
+    res.status(500).json({ errors: e })
+  })
 });
 
 router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProtection, [
@@ -47,7 +45,7 @@ router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProt
         attendance: "user"
       }
     };
-    return documentClient.get(params).promise().then((result) => {
+    return documentClient.get(params).promise().then((result: any) => {
       if (!!Object.keys(result).length) {
         throw new Error('このユーザー名は既に使用されています');
       }
@@ -56,34 +54,34 @@ router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProt
   }),
   check("password").not().isEmpty().isAlphanumeric().isLength({ min: 4, max: 15 })
 ],
-  async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
+  async (req: express.Request, res: express.Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
 
-  const username = req.body.username;
-  const password = req.body.password;
-  const hashedPassword = await bcrypt.hash(password, 10);
+    const username = req.body.username;
+    const password = req.body.password;
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const params = {
-    user: username,
-    password: hashedPassword,
-    attendance: "user",
-    role: "common",
-  };
+    const params = {
+      user: username,
+      password: hashedPassword,
+      attendance: "user",
+      role: "common",
+    };
 
-  documentClient
-    .put({
-      TableName: "Timecards",
-      Item: params,
-    })
-    .promise()
-    .then((result) => res.json({ message: "insert seccess", "csrfToken": req.csrfToken() }))
-    .catch((e) => res.status(500).json({ errors: e }));
-});
+    return documentClient
+      .put({
+        TableName: "Timecards",
+        Item: params,
+      })
+      .promise()
+      .then((result) => res.json({ message: "insert seccess", "csrfToken": req.csrfToken() }))
+      .catch((e) => res.status(500).json({ errors: e }));
+  });
 
-router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req, res) => {
+router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -96,7 +94,7 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/update", helper.authenticateToken, helper.adminUserCheck, csrfProtection, async (req, res) => {
+router.post("/relation/update", helper.authenticateToken, helper.adminUserCheck, csrfProtection, async (req: express.Request, res: express.Response) => {
   const user = req.body.user
   const workspots = req.body.workspots
   try {
@@ -126,13 +124,13 @@ router.post("/relation/update", helper.authenticateToken, helper.adminUserCheck,
           }).promise()
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     return res.status(500).json(e.message)
   }
-  res.json({ "message": "insert success", "csrfToken": req.csrfToken() })
+  return res.json({ "message": "insert success", "csrfToken": req.csrfToken() })
 })
 
-router.get("/relation/index/:username", csrfProtection, (req, res) => {
+router.get("/relation/index/:username", csrfProtection, (req: express.Request, res: express.Response) => {
   const username = req.params.username;
   const params = {
     TableName: 'Timecards',

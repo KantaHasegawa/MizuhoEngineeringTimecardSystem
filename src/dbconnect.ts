@@ -1,4 +1,4 @@
-const AWS = require("aws-sdk");
+import AWS from "aws-sdk";
 
 const dynamoOptions =
   process.env.NODE_ENV === "development"
@@ -9,4 +9,4 @@ const dynamoOptions =
     : {};
 const documentClient = new AWS.DynamoDB.DocumentClient(dynamoOptions);
 
-module.exports = documentClient;
+export default documentClient;

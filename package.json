@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node-dev src/local-app.ts",
+    "start": "ts-node-dev --files src/local-app.ts",
     "clean": "rimraf dist",
     "tsc": "tsc",
     "build": "npm-run-all clean tsc"
@@ -13,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/csurf": "^1.11.2",
+    "@types/jsonwebtoken": "^8.5.5",
+    "@types/node-geocoder": "^3.24.2",
     "@vendia/serverless-express": "^4.3.11",
     "aws-sdk": "^2.995.0",
     "bcrypt": "^5.0.1",
