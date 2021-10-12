@@ -1,15 +1,14 @@
 import express from 'express';
-const router = express.Router();
 const bcrypt = require("bcrypt");
 import jwt from 'jsonwebtoken';
-import documentClient from "../../dbconnect";
+import documentClient from "../dbconnect";
 
 interface IUser {
   name: string,
   role: string
 }
 
-router.post("/login", async (req: express.Request, res: express.Response) => {
+export const login = async (req: express.Request, res: express.Response) => {
   const username: string = req.body.username;
   const password: string = req.body.password;
   const params = {
@@ -20,7 +19,7 @@ router.post("/login", async (req: express.Request, res: express.Response) => {
     }
   };
 
-  const result:any = await documentClient.get(params).promise();
+  const result: any = await documentClient.get(params).promise();
   if (!Object.keys(result).length) {
     res.send(404).json({ "message": "request user is not found" })
     return;
@@ -40,9 +39,9 @@ router.post("/login", async (req: express.Request, res: express.Response) => {
     expiresIn: "90d",
   });
   res.json({ accessToken: accessToken, refreshToken: refreshToken });
-});
+};
 
-router.post("/token", (req: express.Request, res: express.Response) => {
+export const token = (req: express.Request, res: express.Response) => {
   const refreshToken: string = req.body.token;
   if (refreshToken == null) return res.send(401);
   const refreshTokenSecret: jwt.Secret = process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret"
@@ -55,11 +54,9 @@ router.post("/token", (req: express.Request, res: express.Response) => {
     return res.json({ accessToken: accessToken });
   });
   return
-});
+};
 
 const generateAccessToken = (user: IUser) => {
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
   return jwt.sign(user, accessTokenSecret, { expiresIn: "1h" });
 }
-
-module.exports = router;

@@ -1,10 +1,6 @@
 import express from 'express';
-const router = express.Router();
-import {adminUserCheck, authenticateToken} from "../../helper";
-import { GeoPosition } from 'geo-position.ts';
-import documentClient from "../../dbconnect";
+import documentClient from "../dbconnect";
 const XlsxPopulate = require("xlsx-populate");
-import { check, validationResult } from 'express-validator';
 import dayjs from "dayjs";
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -29,8 +25,6 @@ const calculateWorkingTime = (ArgumentAttendance: string, ArgumentLeave?: string
   const dayjsObjAttendance: dayjs.Dayjs = dayjs(ArgumentAttendance)
   const workTime: number = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
   const rest: number = workTime >= 60 ? 60 : 0
-
-
 
   const early: number = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
     ? workTime
@@ -68,41 +62,9 @@ const calculateWorkingTime = (ArgumentAttendance: string, ArgumentLeave?: string
   }
 }
 
-const checkUserLocation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const username: string = req.user.name;
-  const params = {
-    TableName: 'Timecards',
-    ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
-    ExpressionAttributeValues: { ':uval': username, ':aval': "relation" },
-    KeyConditionExpression: '#u = :uval AND begins_with(#a, :aval)'
-  }
-  try {
-    const result = await documentClient.query(params).promise();
-    const workspots: any = result.Items;
-    const userLocation: GeoPosition = new GeoPosition(req.body.lat, req.body.lon)
-    const distanceArray: number[] = []
-    const distanceNameArray: string[] = []
-    for (let workspot of workspots) {
-      let workspotLocation: GeoPosition = new GeoPosition(workspot.latitude, workspot.longitude);
-      let result: number = +userLocation.Distance(workspotLocation).toFixed(0);
-      distanceArray.push(result);
-      distanceNameArray.push(workspot.workspot)
-    }
-    const minDistance = Math.min.apply(null, distanceArray)
-    if (minDistance >= 1000) {
-      throw new Error("指定された勤務地の半径1km以内に移動してください");
-    } else {
-      const distanceIndex: number = distanceArray.indexOf(minDistance);
-      const userLocation: string = distanceNameArray[distanceIndex];
-      req.userLocation = userLocation
-      next();
-    }
-  } catch (e: any) {
-    res.status(501).json(e.message)
-  }
-}
 
-router.get("/index/:username/:year/:month", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
+
+export const indexTimecard = (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -112,9 +74,9 @@ router.get("/index/:username/:year/:month", authenticateToken, adminUserCheck, (
   documentClient.query(params).promise()
     .then((result) => { res.json(result.Items) })
     .catch((e) => res.status(500).json({ errors: e }));
-})
+}
 
-router.get("/latest/:username", authenticateToken, async (req: express.Request, res: express.Response) => {
+export const latestTimecard = async (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -124,9 +86,9 @@ router.get("/latest/:username", authenticateToken, async (req: express.Request, 
   documentClient.query(params).promise()
     .then((result: any) => { res.json(result.Items[result.Items.length - 1]) })
     .catch((e: any) => res.status(500).json({ errors: e }));
-})
+}
 
-router.post("/common", authenticateToken, checkUserLocation, (req: express.Request, res: express.Response) => {
+export const commonTimecard = (req: express.Request, res: express.Response) => {
   let params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -159,7 +121,7 @@ router.post("/common", authenticateToken, checkUserLocation, (req: express.Reque
         const results = calculateWorkingTime(latestRecord.attendance)
         let params = {
           TableName: "Timecards",
-          Key:{
+          Key: {
             user: req.user.name,
             attendance: latestRecord.attendance
           },
@@ -172,42 +134,10 @@ router.post("/common", authenticateToken, checkUserLocation, (req: express.Reque
           .catch((e) => res.status(500).json({ errors: e }));
       }
     })
-})
+}
 
-router.post("/admin/new", authenticateToken, adminUserCheck, [
-  check("user").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$"),
-  check("attendance").not().isEmpty().isNumeric().isLength({ min: 14, max: 14 }),
-  check("leave").custom((value, { req }) => {
-    const dayjsObjLeave = dayjs(value)
-    const dayjsObjAttendance = dayjs(req.body.attendance)
-    if (value) {
-      if (value.length !== 14) throw new Error('無効な日付です');
-      if (dayjsObjLeave.isSameOrBefore(dayjsObjAttendance)) throw new Error("無効な退勤時間です")
-      return true
-    } else {
-      return true
-    }
-  }),
-  check("workspot").not().isEmpty().custom((value) => {
-    const params = {
-      TableName: 'Timecards',
-      ExpressionAttributeNames: { '#u': 'user', '#w':'workspot' },
-      ExpressionAttributeValues: { ':uval': 'workspot',':wval': value },
-      KeyConditionExpression: '#u = :uval',
-      FilterExpression: '#w = :wval'
-    };
-    return documentClient.query(params).promise().then((results: any) => {
-      if (!Object.keys(results.Items).length) throw new Error('登録されていない勤務地です')
-      return true
-    })
-  })
-],
-  (req: express.Request, res: express.Response) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
-  const results: TypeCalculateWorkingTimeReturn = calculateWorkingTime(req.body.attendance, req.body.leave)
+export const adminNewTimecard = (req: express.Request, res: express.Response) => {
+    const results: TypeCalculateWorkingTimeReturn = calculateWorkingTime(req.body.attendance, req.body.leave)
     const params = {
       user: req.body.user,
       attendance: req.body.attendance,
@@ -218,17 +148,17 @@ router.post("/admin/new", authenticateToken, adminUserCheck, [
       regularWorkTime: results.regularWorkTime,
       irregularWorkTime: results.irregularWorkTime
     };
-  return documentClient
-    .put({
-      TableName: "Timecards",
-      Item: params,
-    })
-    .promise()
-    .then((result) => res.json({ "message": "insert success" }))
-    .catch((e) => res.status(500).json({ errors: e }));
-})
+    return documentClient
+      .put({
+        TableName: "Timecards",
+        Item: params,
+      })
+      .promise()
+      .then((result) => res.json({ "message": "insert success" }))
+      .catch((e) => res.status(500).json({ errors: e }));
+  }
 
-router.delete("/admin/delete", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
+export const adminDeleteTimecard = (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -239,9 +169,9 @@ router.delete("/admin/delete", authenticateToken, adminUserCheck, (req: express.
   documentClient.delete(params).promise()
     .then((result) => res.json({ message: "delete success" }))
     .catch((e) => res.status(500).json({ errors: e }));
-})
+}
 
-router.get("/excel/:username/:year/:month", authenticateToken, adminUserCheck, async (req: express.Request, res: express.Response) => {
+export const excelTimecard = async (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -268,6 +198,4 @@ router.get("/excel/:username/:year/:month", authenticateToken, adminUserCheck, a
   } catch (e: any) {
     res.status(501).json(e.message)
   }
-})
-
-module.exports = router;
+}

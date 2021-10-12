@@ -1,7 +1,7 @@
 import express from 'express';
 const session = require('express-session');
 const app: express.Express = express()
-const router = require("./routes/v1/index");
+import router from "./routes/v1/index";
 
 if (process.env.NODE_ENV === "development") {
   require('dotenv').config();

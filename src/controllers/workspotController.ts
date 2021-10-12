@@ -1,13 +1,11 @@
 import express from 'express';
-const router = express.Router();
-import geocoder from "../../gecorderSetting";
-import {adminUserCheck, authenticateToken} from "../../helper";
-import documentClient from "../../dbconnect";
+import geocoder from "../gecorderSetting";
+import documentClient from "../dbconnect";
 import dayjs from 'dayjs';
 import "dayjs/locale/ja"
 dayjs.locale("ja")
 
-router.get("/show/:name", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
+export const showWorkspot = (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#w': 'workspot' },
@@ -22,9 +20,9 @@ router.get("/show/:name", authenticateToken, adminUserCheck, (req: express.Reque
       res.json(result.Items)
     }
   })
-})
+}
 
-router.get("/index", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
+export const indexWorkspot = (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user' },
@@ -38,13 +36,13 @@ router.get("/index", authenticateToken, adminUserCheck, (req: express.Request, r
       res.json(result.Items)
     }
   })
-})
+}
 
-router.post("/new", authenticateToken, adminUserCheck, async (req: express.Request, res: express.Response) => {
+export const newWorkspot = async (req: express.Request, res: express.Response) => {
   const lat = req.body.lat;
   const lon = req.body.lon;
   try {
-    const result:any = await geocoder.reverse({ lat: lat, lon: lon });
+    const result: any = await geocoder.reverse({ lat: lat, lon: lon });
     const params = {
       user: "workspot",
       attendance: dayjs().format('YYYYMMDDHHmmss'),
@@ -63,9 +61,9 @@ router.post("/new", authenticateToken, adminUserCheck, async (req: express.Reque
   } catch (error) {
     return res.json(501)
   }
-})
+}
 
-router.delete("/delete/:attendance", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
+export const deleteWorkspot = (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -76,9 +74,9 @@ router.delete("/delete/:attendance", authenticateToken, adminUserCheck, (req: ex
   documentClient.delete(params).promise()
     .then((result) => res.json({ message: "delete success" }))
     .catch((e) => res.status(500).json({ errors: e }));
-})
+}
 
-router.post("/relation/update", async (req: express.Request, res: express.Response) => {
+export const updateWorkspotRelation = async (req: express.Request, res: express.Response) => {
   const users = req.body.users
   const workspot = req.body.workspot
   try {
@@ -111,10 +109,10 @@ router.post("/relation/update", async (req: express.Request, res: express.Respon
   } catch (e) {
     return res.status(500).json(e)
   }
-  res.json({"message":"update success"})
-})
+  res.json({ "message": "update success" })
+}
 
-router.get("/relation/index/:workspot", (req: express.Request, res: express.Response) => {
+export const indexWorkspotRelation = (req: express.Request, res: express.Response) => {
   const workspot = req.params.workspot;
   const params = {
     TableName: 'Timecards',
@@ -130,6 +128,4 @@ router.get("/relation/index/:workspot", (req: express.Request, res: express.Resp
       res.json(result.Items)
     }
   })
-})
-
-module.exports = router;
+}
