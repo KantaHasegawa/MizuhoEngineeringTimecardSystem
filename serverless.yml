@@ -22,12 +22,13 @@ package:
     - script/**
     - .git/**
     - test/**
+    - src/**
     - README.md
     - .env
 
 functions:
   timeCard:
-    handler: lambda.handler
+    handler: dist/lambda.handler
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
