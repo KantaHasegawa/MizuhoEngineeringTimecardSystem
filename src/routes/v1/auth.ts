@@ -1,12 +1,17 @@
 import express from 'express';
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 import documentClient from "../../dbconnect";
 
+interface IUser {
+  name: string,
+  role: string
+}
+
 router.post("/login", async (req: express.Request, res: express.Response) => {
-  const username = req.body.username;
-  const password = req.body.password;
+  const username: string = req.body.username;
+  const password: string = req.body.password;
   const params = {
     TableName: "Timecards",
     Key: {
@@ -14,7 +19,8 @@ router.post("/login", async (req: express.Request, res: express.Response) => {
       attendance: "user"
     }
   };
-  const result: any = await documentClient.get(params).promise();
+
+  const result:any = await documentClient.get(params).promise();
   if (!Object.keys(result).length) {
     res.send(404).json({ "message": "request user is not found" })
     return;
@@ -24,21 +30,23 @@ router.post("/login", async (req: express.Request, res: express.Response) => {
     res.send(401);
     return
   }
-  const user = {
+  const user: IUser = {
     name: result.Item.user,
     role: result.Item.role,
   };
-  const accessToken = generateAccessToken(user);
-  const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {
+  const accessToken: string = generateAccessToken(user);
+  const refreshTokenSecret: jwt.Secret = process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret"
+  const refreshToken: string = jwt.sign(user, refreshTokenSecret, {
     expiresIn: "90d",
   });
   res.json({ accessToken: accessToken, refreshToken: refreshToken });
 });
 
 router.post("/token", (req: express.Request, res: express.Response) => {
-  const refreshToken = req.body.token;
+  const refreshToken: string = req.body.token;
   if (refreshToken == null) return res.send(401);
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err: any, user: any) => {
+  const refreshTokenSecret: jwt.Secret = process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret"
+  jwt.verify(refreshToken, refreshTokenSecret, (err: any, user: any) => {
     if (err) return res.send(403);
     const accessToken = generateAccessToken({
       name: user.name,
@@ -49,8 +57,9 @@ router.post("/token", (req: express.Request, res: express.Response) => {
   return
 });
 
-const generateAccessToken = (user: any) => {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
+const generateAccessToken = (user: IUser) => {
+  const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
+  return jwt.sign(user, accessTokenSecret, { expiresIn: "1h" });
 }
 
 module.exports = router;

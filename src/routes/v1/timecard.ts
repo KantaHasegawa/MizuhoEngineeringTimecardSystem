@@ -5,61 +5,69 @@ import { GeoPosition } from 'geo-position.ts';
 import documentClient from "../../dbconnect";
 const XlsxPopulate = require("xlsx-populate");
 import { check, validationResult } from 'express-validator';
-const dayjs = require("dayjs")
-const isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
-const isSameOrBefore = require('dayjs/plugin/isSameOrBefore');
-require("dayjs/locale/ja")
+import dayjs from "dayjs";
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import "dayjs/locale/ja"
 dayjs.locale("ja")
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const calculateWorkingTime = (attendance: any) => {
-  const regularAttendanceTime = dayjs(`${attendance.slice(0, 8)}0800`)
-  const regularLeaveTime = dayjs(`${attendance.slice(0, 8)}1700`)
-  const leave = dayjs().format('YYYYMMDDHHmmss')
-  const dayjsObjLeave = dayjs(leave)
-  const dayjsObjAttendance = dayjs(attendance)
-  const workTime = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
-  const rest = workTime >= 60 ? 60 : 0
+type TypeCalculateWorkingTimeReturn = {
+  workTime: number,
+  leave: string,
+  rest: number,
+  regularWorkTime: number,
+  irregularWorkTime: number
+}
 
-  const early = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
+const calculateWorkingTime = (attendance: any): TypeCalculateWorkingTimeReturn => {
+  const regularAttendanceTime: dayjs.Dayjs = dayjs(`${attendance.slice(0, 8)}0800`)
+  const regularLeaveTime: dayjs.Dayjs = dayjs(`${attendance.slice(0, 8)}1700`)
+  const leave: string = dayjs().format('YYYYMMDDHHmmss')
+  const dayjsObjLeave: dayjs.Dayjs = dayjs(leave)
+  const dayjsObjAttendance: dayjs.Dayjs = dayjs(attendance)
+  const workTime: number = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
+  const rest: number = workTime >= 60 ? 60 : 0
+
+  const early: number = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
     ? workTime
     : regularAttendanceTime.diff(dayjsObjAttendance, 'minute') > 0
       ? regularAttendanceTime.diff(dayjsObjAttendance, 'minute')
       : 0
 
-  const late = dayjsObjAttendance.isSameOrAfter(regularLeaveTime)
+  const late: number = dayjsObjAttendance.isSameOrAfter(regularLeaveTime)
     ? workTime
     : dayjsObjLeave.diff(regularLeaveTime, 'minute') > 0
       ? dayjsObjLeave.diff(regularLeaveTime, 'minute')
       : 0
 
   if (workTime - rest - early - late < 0) {
-    const irregularRest = 0 - (workTime - rest - early - late);
-    const regularWorkTime = 0
-    const irregularWorkTime = rest + early - irregularRest;
+    const irregularRest: number = 0 - (workTime - rest - early - late);
+    const regularWorkTime: number = 0
+    const irregularWorkTime: number = rest + early - irregularRest;
     return {
       workTime: workTime,
       leave: leave,
       rest: rest,
-      regularWorkTime,
-      irregularWorkTime
+      regularWorkTime: regularWorkTime,
+      irregularWorkTime: irregularWorkTime
     };
   } else {
-    const irregularWorkTime = early + late
-    const regularWorkTime = workTime - irregularWorkTime - rest
+    const irregularWorkTime: number = early + late
+    const regularWorkTime: number = workTime - irregularWorkTime - rest
     return {
       workTime: workTime,
       leave: leave,
       rest: rest,
-      regularWorkTime,
-      irregularWorkTime
+      regularWorkTime: regularWorkTime,
+      irregularWorkTime: irregularWorkTime
     };
   }
 }
 
 const checkUserLocation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const username = req.user.name;
+  const username: string = req.user.name;
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -69,12 +77,12 @@ const checkUserLocation = async (req: express.Request, res: express.Response, ne
   try {
     const result = await documentClient.query(params).promise();
     const workspots: any = result.Items;
-    const userLocation = new GeoPosition(req.body.lat, req.body.lon)
-    const distanceArray = []
-    const distanceNameArray = []
+    const userLocation: GeoPosition = new GeoPosition(req.body.lat, req.body.lon)
+    const distanceArray: number[] = []
+    const distanceNameArray: string[] = []
     for (let workspot of workspots) {
-      let workspotLocation = new GeoPosition(workspot.latitude, workspot.longitude);
-      let result = +userLocation.Distance(workspotLocation).toFixed(0);
+      let workspotLocation: GeoPosition = new GeoPosition(workspot.latitude, workspot.longitude);
+      let result: number = +userLocation.Distance(workspotLocation).toFixed(0);
       distanceArray.push(result);
       distanceNameArray.push(workspot.workspot)
     }
@@ -82,8 +90,8 @@ const checkUserLocation = async (req: express.Request, res: express.Response, ne
     if (minDistance >= 1000) {
       throw new Error("指定された勤務地の半径1km以内に移動してください");
     } else {
-      const distanceIndex = distanceArray.indexOf(minDistance);
-      const userLocation = distanceNameArray[distanceIndex];
+      const distanceIndex: number = distanceArray.indexOf(minDistance);
+      const userLocation: string = distanceNameArray[distanceIndex];
       req.userLocation = userLocation
       next();
     }
@@ -92,7 +100,7 @@ const checkUserLocation = async (req: express.Request, res: express.Response, ne
   }
 }
 
-router.get("/index/:username/:year/:month", authenticateToken, adminUserCheck,(req, res) => {
+router.get("/index/:username/:year/:month", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -104,7 +112,7 @@ router.get("/index/:username/:year/:month", authenticateToken, adminUserCheck,(r
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.get("/latest/:username",authenticateToken, async (req, res) => {
+router.get("/latest/:username", authenticateToken, async (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -116,7 +124,7 @@ router.get("/latest/:username",authenticateToken, async (req, res) => {
     .catch((e: any) => res.status(500).json({ errors: e }));
 })
 
-router.post("/common", authenticateToken, checkUserLocation, (req, res) => {
+router.post("/common", authenticateToken, checkUserLocation, (req: express.Request, res: express.Response) => {
   let params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -201,7 +209,7 @@ router.post("/admin/new", authenticateToken, adminUserCheck, [
     user: req.body.user,
     attendance: req.body.attendance,
     workspot: req.body.workspot,
-    leave: req.body.leave || "none"
+    leave: req.body.leave ?? "none"
   };
   return documentClient
     .put({
@@ -213,7 +221,7 @@ router.post("/admin/new", authenticateToken, adminUserCheck, [
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.delete("/admin/delete", authenticateToken, adminUserCheck,(req, res) => {
+router.delete("/admin/delete", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -226,7 +234,7 @@ router.delete("/admin/delete", authenticateToken, adminUserCheck,(req, res) => {
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.get("/excel/:username/:year/:month",authenticateToken,adminUserCheck, async(req, res) => {
+router.get("/excel/:username/:year/:month", authenticateToken, adminUserCheck, async (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },

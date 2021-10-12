@@ -1,12 +1,12 @@
 import express from "express"
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 export const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
   if (token == null) return res.send(401);
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err: any, user: any) => {
+  const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
+  jwt.verify(token, accessTokenSecret, (err: any, user: any) => {
     if (err) return res.send(403);
     req.user = user;
     next();

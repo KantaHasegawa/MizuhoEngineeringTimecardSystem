@@ -1,14 +1,14 @@
 import express from 'express';
 const router = express.Router();
 const bcrypt = require("bcrypt")
-const helper = require("../../helper")
+import {adminUserCheck, authenticateToken} from "../../helper";
 import documentClient from "../../dbconnect";
-const geocoder = require("../../gecorderSetting")
+import geocoder from "../../gecorderSetting";
 import { check, validationResult } from 'express-validator';
 import csrf from 'csurf';
 const csrfProtection = csrf({ cookie: false });
 
-router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
+router.get("/show/:name", authenticateToken, adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
     const params = {
       TableName: "Timecards",
       Key: {
@@ -21,7 +21,7 @@ router.get("/show/:name", helper.authenticateToken, helper.adminUserCheck, csrfP
       .catch((e) => res.status(500).json({ errors : e}))
   })
 
-router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
+router.get("/index", authenticateToken, adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
     const params = {
       TableName: 'Timecards',
       IndexName: 'usersIndex',
@@ -36,7 +36,7 @@ router.get("/index", helper.authenticateToken, helper.adminUserCheck, csrfProtec
   })
 });
 
-router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProtection, [
+router.post("/signup", authenticateToken, adminUserCheck, csrfProtection, [
   check("username").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$").custom(value => {
     const params = {
       TableName: "Timecards",
@@ -81,7 +81,7 @@ router.post("/signup", helper.authenticateToken, helper.adminUserCheck, csrfProt
       .catch((e) => res.status(500).json({ errors: e }));
   });
 
-router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
+router.delete("/delete/:name", authenticateToken, adminUserCheck, csrfProtection, (req: express.Request, res: express.Response) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -94,7 +94,7 @@ router.delete("/delete/:name", helper.authenticateToken, helper.adminUserCheck, 
     .catch((e) => res.status(500).json({ errors: e }));
 })
 
-router.post("/relation/update", helper.authenticateToken, helper.adminUserCheck, csrfProtection, async (req: express.Request, res: express.Response) => {
+router.post("/relation/update", authenticateToken, adminUserCheck, csrfProtection, async (req: express.Request, res: express.Response) => {
   const user = req.body.user
   const workspots = req.body.workspots
   try {

@@ -12,10 +12,10 @@
 // }
 declare namespace Express {
     export interface Request {
-      userLocation: String,
+      userLocation: string,
       user: {
-        name: String,
-        role: String
+        name: string,
+        role: string
       }
     }
   }

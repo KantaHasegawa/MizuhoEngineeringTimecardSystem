@@ -3,8 +3,8 @@ const router = express.Router();
 import geocoder from "../../gecorderSetting";
 import {adminUserCheck, authenticateToken} from "../../helper";
 import documentClient from "../../dbconnect";
-const dayjs = require('dayjs');
-require("dayjs/locale/ja")
+import dayjs from 'dayjs';
+import "dayjs/locale/ja"
 dayjs.locale("ja")
 
 router.get("/show/:name", authenticateToken, adminUserCheck, (req: express.Request, res: express.Response) => {
