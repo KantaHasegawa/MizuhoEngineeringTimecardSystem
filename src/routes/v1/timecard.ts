@@ -21,14 +21,16 @@ type TypeCalculateWorkingTimeReturn = {
   irregularWorkTime: number
 }
 
-const calculateWorkingTime = (attendance: any): TypeCalculateWorkingTimeReturn => {
-  const regularAttendanceTime: dayjs.Dayjs = dayjs(`${attendance.slice(0, 8)}0800`)
-  const regularLeaveTime: dayjs.Dayjs = dayjs(`${attendance.slice(0, 8)}1700`)
-  const leave: string = dayjs().format('YYYYMMDDHHmmss')
+const calculateWorkingTime = (ArgumentAttendance: string, ArgumentLeave?: string | undefined): TypeCalculateWorkingTimeReturn => {
+  const regularAttendanceTime: dayjs.Dayjs = dayjs(`${ArgumentAttendance.slice(0, 8)}0800`)
+  const regularLeaveTime: dayjs.Dayjs = dayjs(`${ArgumentAttendance.slice(0, 8)}1700`)
+  const leave: string = ArgumentLeave ?? dayjs().format('YYYYMMDDHHmmss')
   const dayjsObjLeave: dayjs.Dayjs = dayjs(leave)
-  const dayjsObjAttendance: dayjs.Dayjs = dayjs(attendance)
+  const dayjsObjAttendance: dayjs.Dayjs = dayjs(ArgumentAttendance)
   const workTime: number = dayjsObjLeave.diff(dayjsObjAttendance, 'minute')
   const rest: number = workTime >= 60 ? 60 : 0
+
+
 
   const early: number = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
     ? workTime
@@ -205,12 +207,17 @@ router.post("/admin/new", authenticateToken, adminUserCheck, [
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array() });
   }
-  const params = {
-    user: req.body.user,
-    attendance: req.body.attendance,
-    workspot: req.body.workspot,
-    leave: req.body.leave ?? "none"
-  };
+  const results: TypeCalculateWorkingTimeReturn = calculateWorkingTime(req.body.attendance, req.body.leave)
+    const params = {
+      user: req.body.user,
+      attendance: req.body.attendance,
+      workspot: req.body.workspot,
+      leave: results.leave,
+      rest: results.rest,
+      workTime: results.workTime,
+      regularWorkTime: results.regularWorkTime,
+      irregularWorkTime: results.irregularWorkTime
+    };
   return documentClient
     .put({
       TableName: "Timecards",
