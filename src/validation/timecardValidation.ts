@@ -9,14 +9,38 @@ dayjs.locale("ja")
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+const isValidTime = (time: string): Boolean => {
+  const year = Number(time.slice(0, 4))
+  const month = Number(time.slice(4, 6))
+  const day = Number(time.slice(6, 8))
+  const hour = Number(time.slice(8, 10))
+  const minute = Number(time.slice(10, 12))
+  const second = Number(time.slice(12, 14))
+  if (!Number(time)) {
+    return false
+  } else if (!(2021 <= year && year <= 2100)
+    || !(1 <= month && month <= 12)
+    || !(1 <= day && day <= 31)
+    || !(0 <= hour && hour <= 24)
+    || !(0 <= minute && minute <= 60)
+    || !(0 <= second && second <= 60))
+  {
+    return false
+  } else {
+    return true
+  }
+}
+
 export const adminNewTimecardValidation = [
   check("user").not().isEmpty().matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$"),
-  check("attendance").not().isEmpty().isNumeric().isLength({ min: 14, max: 14 }),
+  check("attendance").not().isEmpty().isNumeric().custom((value) => {
+    if (isValidTime(value)) throw new Error("無効な時間です")
+  }),
   check("leave").custom((value, { req }) => {
     const dayjsObjLeave = dayjs(value)
     const dayjsObjAttendance = dayjs(req.body.attendance)
     if (value) {
-      if (value.length !== 14) throw new Error('無効な日付です');
+      if (isValidTime(value)) throw new Error("無効な時間です")
       if (dayjsObjLeave.isSameOrBefore(dayjsObjAttendance)) throw new Error("無効な退勤時間です")
       return true
     } else {
