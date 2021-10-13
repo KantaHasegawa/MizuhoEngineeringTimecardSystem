@@ -3,9 +3,10 @@ import geocoder from "../gecorderSetting";
 import documentClient from "../dbconnect";
 import dayjs from 'dayjs';
 import "dayjs/locale/ja"
+import HttpException from '../exceptions/HttpException';
 dayjs.locale("ja")
 
-export const showWorkspot = (req: express.Request, res: express.Response) => {
+export const showWorkspot = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#w': 'workspot' },
@@ -13,36 +14,32 @@ export const showWorkspot = (req: express.Request, res: express.Response) => {
     KeyConditionExpression: '#u = :userval',
     FilterExpression: '#w = :workspotval'
   };
-  documentClient.query(params, (err, result) => {
-    if (err) {
-      res.status(500).json({ errors: err })
-    } else {
-      res.json(result.Items)
-    }
-  })
+  documentClient.query(params).promise()
+    .then((result) => {
+      if (!result.Items?.length) return next(new HttpException(404, "Workspot does not exist"))
+      res.json({ workspot: result.Items[0] })
+    })
+    .catch((err) => next(err))
 }
 
-export const indexWorkspot = (req: express.Request, res: express.Response) => {
+export const indexWorkspot = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user' },
     ExpressionAttributeValues: { ':val': 'workspot' },
     KeyConditionExpression: '#u = :val'
   };
-  documentClient.query(params, (err, result) => {
-    if (err) {
-      res.status(500).json({ errors: err })
-    } else {
-      res.json(result.Items)
-    }
-  })
+  documentClient.query(params).promise()
+    .then((result) => res.json({ workspots: result.Items }))
+    .catch((err) => next(err))
 }
 
-export const newWorkspot = async (req: express.Request, res: express.Response) => {
+export const newWorkspot = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const lat = req.body.lat;
   const lon = req.body.lon;
   try {
-    const result: any = await geocoder.reverse({ lat: lat, lon: lon });
+    const result = await geocoder.reverse({ lat: lat, lon: lon });
+    if (!result[0].formattedAddress) return next(new HttpException(400, "Location information is invalid"))
     const params = {
       user: "workspot",
       attendance: dayjs().format('YYYYMMDDHHmmss'),
@@ -50,20 +47,14 @@ export const newWorkspot = async (req: express.Request, res: express.Response) =
       latitude: result[0].latitude,
       longitude: result[0].longitude
     };
-    documentClient
-      .put({
-        TableName: "Timecards",
-        Item: params,
-      })
-      .promise()
-      .then((result) => res.json({ message: "insert seccess" }))
-      .catch((e) => res.status(500).json({ errors: e }));
-  } catch (error) {
-    return res.json(501)
+    await documentClient.put({ TableName: "Timecards", Item: params, }).promise();
+    return res.json({message: "Insert Success"})
+  } catch (err) {
+    return next(err)
   }
 }
 
-export const deleteWorkspot = (req: express.Request, res: express.Response) => {
+export const deleteWorkspot = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -73,10 +64,10 @@ export const deleteWorkspot = (req: express.Request, res: express.Response) => {
   };
   documentClient.delete(params).promise()
     .then((result) => res.json({ message: "delete success" }))
-    .catch((e) => res.status(500).json({ errors: e }));
+    .catch((err) => next(err));
 }
 
-export const updateWorkspotRelation = async (req: express.Request, res: express.Response) => {
+export const updateWorkspotRelation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const users = req.body.users
   const workspot = req.body.workspot
   try {
@@ -106,13 +97,13 @@ export const updateWorkspotRelation = async (req: express.Request, res: express.
           }).promise()
       }
     }
-  } catch (e) {
-    return res.status(500).json(e)
+    return res.json({ "message": "update success" })
+  } catch (err) {
+    return next(err)
   }
-  res.json({ "message": "update success" })
 }
 
-export const indexWorkspotRelation = (req: express.Request, res: express.Response) => {
+export const indexWorkspotRelation = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const workspot = req.params.workspot;
   const params = {
     TableName: 'Timecards',
@@ -121,11 +112,7 @@ export const indexWorkspotRelation = (req: express.Request, res: express.Respons
     ExpressionAttributeValues: { ':val': `relation ${workspot}` },
     KeyConditionExpression: '#a = :val'
   };
-  documentClient.query(params, (err, result) => {
-    if (err) {
-      res.status(500).json({ errors: err })
-    } else {
-      res.json(result.Items)
-    }
-  })
+  documentClient.query(params).promise()
+    .then((result) => res.json({ relations: result.Items }))
+    .catch((err) => next(err))
 }

@@ -2,6 +2,8 @@ import express from 'express';
 const session = require('express-session');
 const app: express.Express = express()
 import router from "./routes/v1/index";
+import { errorMiddleware } from './helper/helper'
+
 
 if (process.env.NODE_ENV === "development") {
   require('dotenv').config();
@@ -40,5 +42,6 @@ app.use(
 app.use(session(sess));
 
 app.use("/", router);
+app.use(errorMiddleware)
 
 export default app;

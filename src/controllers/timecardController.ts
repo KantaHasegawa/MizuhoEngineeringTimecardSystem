@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import "dayjs/locale/ja"
+import HttpException from '../exceptions/HttpException';
 dayjs.locale("ja")
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -64,7 +65,7 @@ const calculateWorkingTime = (ArgumentAttendance: string, ArgumentLeave?: string
 
 
 
-export const indexTimecard = (req: express.Request, res: express.Response) => {
+export const indexTimecard = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -73,10 +74,10 @@ export const indexTimecard = (req: express.Request, res: express.Response) => {
   };
   documentClient.query(params).promise()
     .then((result) => { res.json(result.Items) })
-    .catch((e) => res.status(500).json({ errors: e }));
+    .catch((err) => next(err));
 }
 
-export const latestTimecard = async (req: express.Request, res: express.Response) => {
+export const latestTimecard = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -84,11 +85,17 @@ export const latestTimecard = async (req: express.Request, res: express.Response
     KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
   };
   documentClient.query(params).promise()
-    .then((result: any) => { res.json(result.Items[result.Items.length - 1]) })
-    .catch((e: any) => res.status(500).json({ errors: e }));
+    .then((result) => {
+      if (!result?.Items) {
+        throw new HttpException(406, "Latest TimeCard does not exist");
+      } else {
+        res.json(result.Items[result.Items.length - 1])
+      }
+    })
+    .catch((err) => next(err));
 }
 
-export const commonTimecard = (req: express.Request, res: express.Response) => {
+export const commonTimecard = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   let params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -96,8 +103,8 @@ export const commonTimecard = (req: express.Request, res: express.Response) => {
     KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
   };
   documentClient.query(params).promise()
-    .then((result: any) => {
-      const latestRecord = result.Items[result.Items.length - 1]
+    .then((result) => {
+      const latestRecord = result.Items ? result.Items[result.Items.length - 1] : undefined
       if (!latestRecord || latestRecord.leave !== "none") {
         let params = {
           user: req.user.name,
@@ -116,7 +123,7 @@ export const commonTimecard = (req: express.Request, res: express.Response) => {
           })
           .promise()
           .then((result) => res.json({ "message": "insert success" }))
-          .catch((e) => res.status(500).json({ errors: e }));
+          .catch((err) => next(err));
       } else {
         const results = calculateWorkingTime(latestRecord.attendance)
         let params = {
@@ -131,12 +138,12 @@ export const commonTimecard = (req: express.Request, res: express.Response) => {
         }
         documentClient.update(params).promise()
           .then((result) => res.json({ "message": "update success" }))
-          .catch((e) => res.status(500).json({ errors: e }));
+          .catch((err) => next(err));
       }
     })
 }
 
-export const adminNewTimecard = (req: express.Request, res: express.Response) => {
+export const adminNewTimecard = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const results: TypeCalculateWorkingTimeReturn = calculateWorkingTime(req.body.attendance, req.body.leave)
     const params = {
       user: req.body.user,
@@ -155,10 +162,10 @@ export const adminNewTimecard = (req: express.Request, res: express.Response) =>
       })
       .promise()
       .then((result) => res.json({ "message": "insert success" }))
-      .catch((e) => res.status(500).json({ errors: e }));
+      .catch((err) => next(err));
   }
 
-export const adminDeleteTimecard = (req: express.Request, res: express.Response) => {
+export const adminDeleteTimecard = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     Key: {
@@ -168,10 +175,10 @@ export const adminDeleteTimecard = (req: express.Request, res: express.Response)
   };
   documentClient.delete(params).promise()
     .then((result) => res.json({ message: "delete success" }))
-    .catch((e) => res.status(500).json({ errors: e }));
+    .catch((err) => next(err));
 }
 
-export const excelTimecard = async (req: express.Request, res: express.Response) => {
+export const excelTimecard = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
@@ -195,7 +202,7 @@ export const excelTimecard = async (req: express.Request, res: express.Response)
     }
     await workbook.toFileAsync(`public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`)
     res.download(`public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`)
-  } catch (e: any) {
-    res.status(501).json(e.message)
+  } catch (err) {
+    next(err)
   }
 }

@@ -2,21 +2,33 @@ import express from "express"
 import jwt from "jsonwebtoken";
 import { GeoPosition } from 'geo-position.ts';
 import documentClient from '../dbconnect'
+import HttpException from '../exceptions/HttpException';
+
+export const errorMiddleware = (err: HttpException, req: express.Request, res: express.Response, next: express.NextFunction) =>{
+  const status = err.status || 500;
+  const message = err.message || 'Something went wrong';
+  res
+    .status(status)
+    .send({
+      status,
+      message,
+    })
+}
 
 export const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  if (token == null) return res.send(401);
+  if (token == null) return next(new HttpException(402, "Authentication token is null"))
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
   jwt.verify(token, accessTokenSecret, (err: any, user: any) => {
-    if (err) return res.send(403);
+    if (err) return next(err)
     req.user = user;
-    next();
   });
+  next();
 }
 
 export const adminUserCheck = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if(req.user.role !== "admin"){return res.send(403)}
+  if (req.user.role !== "admin") next(new HttpException(402, "Permission error"))
   next();
 }
 
@@ -42,14 +54,14 @@ export const checkUserLocation = async (req: express.Request, res: express.Respo
     }
     const minDistance = Math.min.apply(null, distanceArray)
     if (minDistance >= 1000) {
-      throw new Error("指定された勤務地の半径1km以内に移動してください");
+      throw new HttpException(400, "指定された勤務地の半径1km以内に移動してください");
     } else {
       const distanceIndex: number = distanceArray.indexOf(minDistance);
       const userLocation: string = distanceNameArray[distanceIndex];
       req.userLocation = userLocation
-      next();
     }
-  } catch (e: any) {
-    res.status(501).json(e.message)
-  }
+    next();
+  } catch (err: any) {
+    next(err)
+  } 
 }
