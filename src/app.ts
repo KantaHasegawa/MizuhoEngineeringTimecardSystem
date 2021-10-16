@@ -2,6 +2,8 @@ import express from 'express';
 const session = require('express-session');
 const app: express.Express = express()
 import router from "./routes/v1/index";
+import cors from 'cors'
+import cookieParser from "cookie-parser"
 import { errorMiddleware } from './helper/helper'
 
 
@@ -31,6 +33,15 @@ if (process.env.NODE_ENV === 'production') {
   sess.cookie.secure = true
 }
 
+const allowedOrigins = ['http://localhost:3000'];
+
+const options: cors.CorsOptions = {
+  origin: allowedOrigins,
+  credentials: true
+};
+
+app.use(cors(options))
+
 app.use(express.json());
 
 app.use(
@@ -38,6 +49,8 @@ app.use(
     extended: true,
   })
 );
+
+app.use(cookieParser());
 
 app.use(session(sess));
 

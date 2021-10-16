@@ -3,6 +3,9 @@ const bcrypt = require("bcrypt");
 import jwt from 'jsonwebtoken';
 import documentClient from "../dbconnect";
 import HttpException from '../exceptions/HttpException';
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+dayjs.extend(utc)
 
 interface IUser {
   name: string,
@@ -33,18 +36,29 @@ export const login = async (req: express.Request, res: express.Response, next: e
     const refreshToken: string = jwt.sign(user, refreshTokenSecret, {
       expiresIn: "90d",
     });
+    res.cookie("refreshToken", refreshToken, {httpOnly: true});
     res.json({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (err) {
     next(err)
   }
 };
 
-export const token = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const refreshToken: string = req.body.token;
-  if (refreshToken == null) return next(new HttpException(401,"RefreshToken is null"))
+export const token = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const refreshToken: string = req.body.refreshToken;
+  if (refreshToken == null) return next(new HttpException(401, "RefreshToken is null"))
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user' },
+    ExpressionAttributeValues: { ':val': 'refreshTokenBlackList' },
+    KeyConditionExpression: '#u = :val'
+  };
+  const results: any = await documentClient.query(params).promise()
+  console.log(results.Items)
+  const blackList = results.Items.map((item: any) => item.attendance)
+  if (blackList.includes(refreshToken)) return next(new HttpException(401, "Invalid refreshToken"))
   const refreshTokenSecret: jwt.Secret = process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret"
   jwt.verify(refreshToken, refreshTokenSecret, (err: any, user: any) => {
-    if (err) return next(new HttpException(401, "Your refreshToken is incorrect"))
+    if (err) return next(err)
     const accessToken = generateAccessToken({
       name: user.name,
       role: user.role,
@@ -53,8 +67,23 @@ export const token = (req: express.Request, res: express.Response, next: express
   });
 };
 
+export const logout =  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const params = {
+    user: "refreshTokenBlackList",
+    attendance: req.body.refreshToken,
+    expirationTime: dayjs.utc().add(1, 'week').unix()
+  };
+  return documentClient
+    .put({
+      TableName: "Timecards",
+      Item: params,
+    })
+    .promise()
+    .then((result) => res.json({ message: "Logout success" }))
+    .catch((err) => next(err))
+}
+
 const generateAccessToken = (user: IUser) => {
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
   return jwt.sign(user, accessTokenSecret, { expiresIn: "1h" });
 }
-
