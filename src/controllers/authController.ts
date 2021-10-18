@@ -36,7 +36,7 @@ export const login = async (req: express.Request, res: express.Response, next: e
     const refreshToken: string = jwt.sign(user, refreshTokenSecret, {
       expiresIn: "90d",
     });
-    res.cookie("refreshToken", refreshToken, {httpOnly: true});
+    res.cookie("refreshToken", refreshToken);
     res.json({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (err) {
     next(err)
@@ -45,7 +45,7 @@ export const login = async (req: express.Request, res: express.Response, next: e
 
 export const token = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const refreshToken: string = req.body.refreshToken;
-  if (refreshToken == null) return next(new HttpException(401, "RefreshToken is null"))
+  if (refreshToken == null) return next(new HttpException(403, "RefreshToken is null"))
   const params = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user' },
@@ -53,9 +53,8 @@ export const token = async (req: express.Request, res: express.Response, next: e
     KeyConditionExpression: '#u = :val'
   };
   const results: any = await documentClient.query(params).promise()
-  console.log(results.Items)
   const blackList = results.Items.map((item: any) => item.attendance)
-  if (blackList.includes(refreshToken)) return next(new HttpException(401, "Invalid refreshToken"))
+  if (blackList.includes(refreshToken)) return next(new HttpException(403, "Invalid refreshToken"))
   const refreshTokenSecret: jwt.Secret = process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret"
   jwt.verify(refreshToken, refreshTokenSecret, (err: any, user: any) => {
     if (err) return next(err)
@@ -85,5 +84,5 @@ export const logout =  (req: express.Request, res: express.Response, next: expre
 
 const generateAccessToken = (user: IUser) => {
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
-  return jwt.sign(user, accessTokenSecret, { expiresIn: "1h" });
+  return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });
 }
