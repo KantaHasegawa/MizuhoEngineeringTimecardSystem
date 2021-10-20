@@ -23,9 +23,10 @@ export const indexUser = (req: express.Request, res: express.Response, next: exp
   const params = {
     TableName: 'Timecards',
     IndexName: 'usersIndex',
-    ExpressionAttributeNames: { '#a': 'attendance' },
-    ExpressionAttributeValues: { ':val': 'user' },
-    KeyConditionExpression: '#a = :val'
+    ExpressionAttributeNames: { '#a': 'attendance','#r': 'role' },
+    ExpressionAttributeValues: { ':aval': 'user', ':rval': 'common' },
+    KeyConditionExpression: '#a = :aval',
+    FilterExpression: '#r = :rval'
   };
   documentClient.query(params).promise()
     // .then((result) => {res.json({ "users": result.Items, "csrfToken": req.csrfToken() })})
