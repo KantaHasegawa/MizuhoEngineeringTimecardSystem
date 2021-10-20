@@ -82,6 +82,17 @@ export const logout =  (req: express.Request, res: express.Response, next: expre
     .catch((err) => next(err))
 }
 
+export const currentuser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
+  const authHeader = req.headers["authorization"];
+  const accessToken = authHeader && authHeader.split(" ")[1];
+  if (!accessToken) return next(new HttpException(403, "AccessToken is null"))
+  jwt.verify(accessToken, accessTokenSecret, (err: any, user: any) => {
+    if (err) return next(err)
+    return res.json(user);
+  });
+}
+
 const generateAccessToken = (user: IUser) => {
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
   return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });

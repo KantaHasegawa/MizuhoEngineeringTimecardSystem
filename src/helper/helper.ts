@@ -63,5 +63,5 @@ export const checkUserLocation = async (req: express.Request, res: express.Respo
     next();
   } catch (err: any) {
     next(err)
-  } 
+  }
 }
