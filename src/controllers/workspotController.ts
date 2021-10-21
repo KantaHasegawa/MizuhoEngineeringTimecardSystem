@@ -48,23 +48,56 @@ export const newWorkspot = async (req: express.Request, res: express.Response, n
       longitude: result[0].longitude
     };
     await documentClient.put({ TableName: "Timecards", Item: params, }).promise();
-    return res.json({message: "Insert Success"})
+    return res.json({ message: "Insert Success" })
   } catch (err) {
     return next(err)
   }
 }
 
-export const deleteWorkspot = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const params = {
-    TableName: 'Timecards',
-    Key: {
-      user: "workspot",
-      attendance: req.params.attendance
+export const deleteWorkspot = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const attendance = req.body.attendance
+  const workspot = req.body.workspot
+  const workspotParams = {
+    DeleteRequest: {
+      Key: {
+        user: "workspot",
+        attendance: attendance
+      }
     }
+  }
+  const relationParams = {
+    TableName: 'Timecards',
+    IndexName: 'usersIndex',
+    ExpressionAttributeNames: { '#a': 'attendance' },
+    ExpressionAttributeValues: { ':val': `relation ${workspot}` },
+    KeyConditionExpression: '#a = :val'
   };
-  documentClient.delete(params).promise()
-    .then((result) => res.json({ message: "delete success" }))
-    .catch((err) => next(err));
+
+  try {
+    const relationResult = await documentClient.query(relationParams).promise()
+    const requestArray = relationResult.Items!.map((item) => {
+      return (
+        {
+          DeleteRequest: {
+            Key: {
+              user: item.user,
+              attendance: `relation ${workspot}`
+            }
+          }
+        }
+      )
+    })
+    requestArray.push(workspotParams)
+    const requestParams = {
+      RequestItems: {
+        Timecards: requestArray
+      }
+    };
+    await documentClient.batchWrite(requestParams).promise()
+    res.json({message: "delete success"})
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const updateWorkspotRelation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {

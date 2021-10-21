@@ -8,6 +8,6 @@ router.get("/index", authenticateToken, adminUserCheck, indexWorkspot)
 router.get("/relation/index/:workspot", authenticateToken, adminUserCheck, indexWorkspotRelation)
 router.post("/new", authenticateToken, adminUserCheck, newWorkspot)
 router.post("/relation/update", authenticateToken, adminUserCheck, updateWorkspotRelation)
-router.delete("/delete/:attendance", authenticateToken, adminUserCheck, deleteWorkspot)
+router.post("/delete", authenticateToken, adminUserCheck, deleteWorkspot)
 
 export default router;

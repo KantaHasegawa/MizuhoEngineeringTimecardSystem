@@ -95,5 +95,5 @@ export const currentuser = (req: express.Request, res: express.Response, next: e
 
 const generateAccessToken = (user: IUser) => {
   const accessTokenSecret: jwt.Secret = process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret"
-  return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });
+  return jwt.sign(user, accessTokenSecret, { expiresIn: "5m" });
 }
