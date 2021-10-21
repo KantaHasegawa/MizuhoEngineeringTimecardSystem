@@ -23,15 +23,36 @@ export const indexUser = (req: express.Request, res: express.Response, next: exp
   const params = {
     TableName: 'Timecards',
     IndexName: 'usersIndex',
-    ExpressionAttributeNames: { '#a': 'attendance','#r': 'role' },
+    ExpressionAttributeNames: { '#a': 'attendance', '#r': 'role' },
     ExpressionAttributeValues: { ':aval': 'user', ':rval': 'common' },
     KeyConditionExpression: '#a = :aval',
     FilterExpression: '#r = :rval'
   };
   documentClient.query(params).promise()
     // .then((result) => {res.json({ "users": result.Items, "csrfToken": req.csrfToken() })})
-    .then((result) => res.json({ "users": result.Items }))
+    .then((result) => res.json({ "params": result.Items }))
     .catch((err) => next(err))
+};
+
+export const userAllIDs = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const params = {
+    TableName: 'Timecards',
+    IndexName: 'usersIndex',
+    ExpressionAttributeNames: { '#a': 'attendance', '#r': 'role' },
+    ExpressionAttributeValues: { ':aval': 'user', ':rval': 'common' },
+    KeyConditionExpression: '#a = :aval',
+    FilterExpression: '#r = :rval'
+  };
+  try {
+    const result = await documentClient.query(params).promise()
+    const response = result.Items?.map((item) => {
+      return ({ params: { id: item.user } })
+    })
+    res.json(response)
+  } catch (err) {
+    next(err)
+  }
+
 };
 
 export const signupUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -53,6 +74,28 @@ export const signupUser = async (req: express.Request, res: express.Response, ne
     })
     .promise()
     .then((result) => res.json({ message: "insert seccess" }))
+    .catch((err) => next(err))
+}
+
+export const updateUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const params = {
+    user: username,
+    password: hashedPassword,
+    attendance: "user",
+    role: "common",
+  };
+
+  return documentClient
+    .put({
+      TableName: "Timecards",
+      Item: params,
+    })
+    .promise()
+    .then((result) => res.json({ message: "udpate seccess" }))
     .catch((err) => next(err))
 }
 

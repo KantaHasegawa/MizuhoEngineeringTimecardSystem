@@ -27,3 +27,14 @@ export const signupUserValidation = [
   else next();
 }
 ]
+
+export const editUserValidation = [
+  check("password").not().isEmpty().isAlphanumeric().isLength({ min: 4, max: 15 }),
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+    else next();
+  }
+]
