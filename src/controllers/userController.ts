@@ -189,6 +189,6 @@ export const indexUserRelation = (req: express.Request, res: express.Response, n
     KeyConditionExpression: '#u = :uval AND begins_with(#a, :aval)'
   }
   documentClient.query(params).promise()
-    .then((result) => res.json({ "relations": result.Items }))
+    .then((result) => res.json({ params: result.Items }))
     .catch((err) => next(err))
 }
