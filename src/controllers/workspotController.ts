@@ -30,8 +30,26 @@ export const indexWorkspot = (req: express.Request, res: express.Response, next:
     KeyConditionExpression: '#u = :val'
   };
   documentClient.query(params).promise()
-    .then((result) => res.json({ workspots: result.Items }))
+    .then((result) => res.json({ params: result.Items }))
     .catch((err) => next(err))
+}
+
+export const indexWorkspotNameOnly = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user' },
+    ExpressionAttributeValues: { ':val': 'workspot' },
+    KeyConditionExpression: '#u = :val'
+  };
+  try {
+    const result = await documentClient.query(params).promise();
+    const workspots = result.Items?.map((item) => {
+      return item.workspot
+    })
+    res.json({ params: workspots })
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const newWorkspot = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -94,7 +112,7 @@ export const deleteWorkspot = async (req: express.Request, res: express.Response
       }
     };
     await documentClient.batchWrite(requestParams).promise()
-    res.json({message: "delete success"})
+    res.json({ message: "delete success" })
   } catch (err) {
     next(err)
   }

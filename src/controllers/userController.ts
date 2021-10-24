@@ -153,16 +153,16 @@ export const updateUserRelation = async (req: express.Request, res: express.Resp
           TableName: 'Timecards',
           Key: {
             user: user,
-            attendance: `relation ${workspot.name}`
+            attendance: `relation ${workspot.workspot}`
           }
         };
         await documentClient.delete(params).promise();
       } else {
-        const result = await geocoder.geocode(workspot.name)
+        const result = await geocoder.geocode(workspot.workspot)
         let params = {
           user: user,
-          attendance: `relation ${workspot.name}`,
-          workspot: workspot.name,
+          attendance: `relation ${workspot.workspot}`,
+          workspot: workspot.workspot,
           latitude: result[0].latitude,
           longitude: result[0].longitude
         }
@@ -191,4 +191,33 @@ export const indexUserRelation = (req: express.Request, res: express.Response, n
   documentClient.query(params).promise()
     .then((result) => res.json({ params: result.Items }))
     .catch((err) => next(err))
+}
+
+export const indexUserRelationNameOnly = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const username = req.params.username;
+  const params = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
+    ExpressionAttributeValues: { ':uval': username, ':aval': "relation" },
+    KeyConditionExpression: '#u = :uval AND begins_with(#a, :aval)'
+  }
+  try {
+    const result = await documentClient.query(params).promise()
+    const workspots = []
+    const workspotsAndDelete = []
+    if (result.Items) {
+      for (let item of result.Items) {
+        let workspotAndDeleteParams = {
+          workspot: item.workspot,
+          delete: false,
+          new: false
+        }
+        workspots.push(item.workspot)
+        workspotsAndDelete.push(workspotAndDeleteParams)
+      }
+    }
+    res.json({ workspots: workspots, workspotsAndDelete: workspotsAndDelete })
+  } catch (err) {
+    next(err)
+  }
 }
