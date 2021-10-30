@@ -2,8 +2,6 @@ import express from 'express';
 const bcrypt = require("bcrypt")
 import documentClient from "../dbconnect";
 import geocoder from "../gecorderSetting";
-// import csrf from 'csurf';
-// const csrfProtection = csrf({ cookie: false });
 
 export const showUser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
@@ -193,31 +191,32 @@ export const indexUserRelation = (req: express.Request, res: express.Response, n
     .catch((err) => next(err))
 }
 
-export const indexUserRelationNameOnly = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const UserRelationSelectBoxItems = async(req: express.Request, res: express.Response, next: express.NextFunction) => {
   const username = req.params.username;
-  const params = {
+  const relationsParams = {
     TableName: 'Timecards',
     ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
     ExpressionAttributeValues: { ':uval': username, ':aval': "relation" },
     KeyConditionExpression: '#u = :uval AND begins_with(#a, :aval)'
   }
-  try {
-    const result = await documentClient.query(params).promise()
-    const workspots = []
-    const workspotsAndDelete = []
-    if (result.Items) {
-      for (let item of result.Items) {
-        let workspotAndDeleteParams = {
-          workspot: item.workspot,
-          delete: false,
-          new: false
-        }
-        workspots.push(item.workspot)
-        workspotsAndDelete.push(workspotAndDeleteParams)
+    const workspotsParams = {
+    TableName: 'Timecards',
+    ExpressionAttributeNames: { '#u': 'user' },
+    ExpressionAttributeValues: { ':val': 'workspot' },
+    KeyConditionExpression: '#u = :val'
+  };
+  const relationsResult = await documentClient.query(relationsParams).promise()
+  const workspotsResult = await documentClient.query(workspotsParams).promise()
+
+  const selectBoxItems = workspotsResult.Items?.map((item) => {
+    if (!relationsResult.Items?.find(({ workspot }) => workspot === item.workspot)) {
+      return {
+        value: item.workspot,
+        label: item.workspot
       }
     }
-    res.json({ workspots: workspots, workspotsAndDelete: workspotsAndDelete })
-  } catch (err) {
-    next(err)
-  }
+  }).filter((item) => item)
+
+  res.json({ selectBoxItems: selectBoxItems, relations: relationsResult.Items })
+
 }

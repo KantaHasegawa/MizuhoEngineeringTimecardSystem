@@ -6,11 +6,6 @@ import cors from 'cors'
 import cookieParser from "cookie-parser"
 import { errorMiddleware } from './helper/helper'
 
-
-if (process.env.NODE_ENV === "development") {
-  require('dotenv').config();
-}
-
 interface ISess {
   secret: String,
   cookie: {
