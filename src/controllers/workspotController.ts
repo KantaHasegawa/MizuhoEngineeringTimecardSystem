@@ -54,7 +54,7 @@ export const indexWorkspotNameOnly = async (req: express.Request, res: express.R
 
 export const newWorkspot = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const lat = req.body.lat;
-  const lon = req.body.lon;
+  const lon = req.body.lng;
   try {
     const result = await geocoder.reverse({ lat: lat, lon: lon });
     if (!result[0].formattedAddress) return next(new HttpException(400, "Location information is invalid"))
