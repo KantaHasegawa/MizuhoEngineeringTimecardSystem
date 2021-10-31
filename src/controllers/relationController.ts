@@ -75,8 +75,51 @@ export const indexWorkspotRelation = (
   documentClient
     .query(params)
     .promise()
-    .then((result) => res.json({ relations: result.Items }))
+    .then((result) => res.json({ params: result.Items }))
     .catch((err) => next(err));
+};
+
+export const workspotRelationSelectBoxItems = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  const workspot = req.params.workspot;
+  const relationsParams = {
+    TableName: "Timecards",
+    IndexName: "usersIndex",
+    ExpressionAttributeNames: { "#a": "attendance" },
+    ExpressionAttributeValues: { ":val": `relation ${workspot}` },
+    KeyConditionExpression: "#a = :val",
+  };
+  const usersParams = {
+    TableName: "Timecards",
+    IndexName: "usersIndex",
+    ExpressionAttributeNames: { "#a": "attendance", "#r": "role" },
+    ExpressionAttributeValues: { ":aval": "user", ":rval": "common" },
+    KeyConditionExpression: "#a = :aval",
+    FilterExpression: "#r = :rval",
+  };
+  try {
+    const relationsResult = await documentClient
+      .query(relationsParams)
+      .promise();
+    const usersResult = await documentClient.query(usersParams).promise();
+    const selectBoxItems = usersResult.Items?.map((item) => {
+      if (!relationsResult.Items?.find(({ user }) => user === item.user)) {
+        return {
+          value: item.user,
+          label: item.user,
+        };
+      }
+    }).filter((item) => item);
+    res.json({
+      selectBoxItems: selectBoxItems,
+      relations: relationsResult.Items,
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const newRelation = async (

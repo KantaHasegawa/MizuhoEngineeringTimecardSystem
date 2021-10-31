@@ -34,6 +34,28 @@ export const indexWorkspot = (req: express.Request, res: express.Response, next:
     .catch((err) => next(err))
 }
 
+export const workspotAllIDs = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  const params = {
+    TableName: "Timecards",
+    ExpressionAttributeNames: { "#u": "user" },
+    ExpressionAttributeValues: { ":val": "workspot" },
+    KeyConditionExpression: "#u = :val",
+  };
+  try {
+    const result = await documentClient.query(params).promise();
+    const response = result.Items?.map((item) => {
+      return { params: { id: item.workspot } };
+    });
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const indexWorkspotNameOnly = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const params = {
     TableName: 'Timecards',
@@ -57,16 +79,22 @@ export const newWorkspot = async (req: express.Request, res: express.Response, n
   const lon = req.body.lng;
   try {
     const result = await geocoder.reverse({ lat: lat, lon: lon });
-    if (!result[0].formattedAddress) return next(new HttpException(400, "Location information is invalid"))
+    if (!result[0].formattedAddress)
+      return next(new HttpException(400, "Location information is invalid"));
+    const formattedAddressName = result[0].formattedAddress.split("、")[1];
+    const latitude = result[0].latitude;
+    const longitude = result[0].longitude;
     const params = {
       user: "workspot",
-      attendance: dayjs().format('YYYYMMDDHHmmss'),
-      workspot: result[0].formattedAddress.split("、")[1],
-      latitude: result[0].latitude,
-      longitude: result[0].longitude
+      attendance: `workspot ${formattedAddressName}`,
+      workspot: formattedAddressName,
+      latitude: latitude,
+      longitude: longitude,
     };
-    await documentClient.put({ TableName: "Timecards", Item: params, }).promise();
-    return res.json({ message: "Insert Success" })
+    await documentClient
+      .put({ TableName: "Timecards", Item: params })
+      .promise();
+    return res.json({ message: "Insert Success" });
   } catch (err) {
     return next(err)
   }

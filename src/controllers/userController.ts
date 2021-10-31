@@ -50,7 +50,6 @@ export const userAllIDs = async (req: express.Request, res: express.Response, ne
   } catch (err) {
     next(err)
   }
-
 };
 
 export const signupUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
