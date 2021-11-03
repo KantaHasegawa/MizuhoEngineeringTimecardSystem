@@ -32,6 +32,11 @@ export const adminUserCheck = (req: express.Request, res: express.Response, next
   next();
 }
 
+export const adminUserOrAuthenticatedUserCheck = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.user.role !== "admin" && req.params.username !== req.user.name) next(new HttpException(402, "Permission error"))
+  next();
+}
+
 export const checkUserLocation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const username: string = req.user.name;
   const params = {
