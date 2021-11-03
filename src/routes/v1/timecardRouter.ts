@@ -9,6 +9,6 @@ router.get("/latest/:username", authenticateToken, latestTimecard)
 router.get("/excel/:username/:year/:month", authenticateToken, adminUserCheck, excelTimecard)
 router.post("/common", authenticateToken, checkUserLocation, commonTimecard)
 router.post("/admin/new", authenticateToken, adminUserCheck, adminNewTimecardValidation, adminNewTimecard)
-router.delete("/admin/delete", authenticateToken, adminUserCheck, adminDeleteTimecard)
+router.post("/admin/delete", authenticateToken, adminUserCheck, adminDeleteTimecard)
 
 export default router;

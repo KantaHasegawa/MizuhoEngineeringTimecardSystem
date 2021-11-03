@@ -190,7 +190,6 @@ export const excelTimecard = async (req: express.Request, res: express.Response,
     const sheet1 = workbook.sheet("Sheet1")
     const results = await documentClient.query(params).promise()
     const timecards: any = results.Items
-    console.log(timecards)
     sheet1.cell("B3").value(req.params.username);
     sheet1.cell("B4").value(`${req.params.year}年 ${req.params.month}月`);
     for (let timecard of timecards) {
