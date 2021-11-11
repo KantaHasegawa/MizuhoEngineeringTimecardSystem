@@ -205,3 +205,61 @@ export const excelTimecard = async (req: express.Request, res: express.Response,
     next(err)
   }
 }
+
+type TypeTimecardStatus = "NotAttend" | "NotLeave" | "AlreadyLeave"
+
+const isTimecardStatus = (timecard: any): TypeTimecardStatus => {
+  const today = dayjs().format('YYYYMMDD')
+  const result =
+    timecard.leave === 'none' ? "NotLeave"
+      : timecard.attendance.slice(0, 8) === today ? "AlreadyLeave"
+        : "NotAttend"
+  return result
+}
+
+export const getAllUserLatestTimecard = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const userIndexParams = {
+    TableName: 'Timecards',
+    IndexName: 'usersIndex',
+    ExpressionAttributeNames: { '#a': 'attendance', '#r': 'role' },
+    ExpressionAttributeValues: { ':aval': 'user', ':rval': 'common' },
+    KeyConditionExpression: '#a = :aval',
+    FilterExpression: '#r = :rval'
+  };
+  try {
+    const usersResult:any = await documentClient.query(userIndexParams).promise()
+    const notAttendTimecards = []
+    const notLeaveTimecards = []
+    const alreadyLeaveTimecards = []
+      for (const user of usersResult.Items) {
+      let params = {
+        TableName: 'Timecards',
+        ExpressionAttributeNames: { '#u': 'user', '#a': 'attendance' },
+        ExpressionAttributeValues: { ':userval': user.user, ':attendanceval': "2" },
+        KeyConditionExpression: '#u = :userval AND begins_with(#a, :attendanceval)',
+      };
+        let timecardResult: any = await documentClient.query(params).promise()
+        if (!timecardResult.Items.length) {
+          notAttendTimecards.push({
+            user: user.user,
+            attendance: "none"
+          })
+        } else {
+          switch (isTimecardStatus(timecardResult.Items[timecardResult.Items.length - 1])) {
+            case "NotAttend":
+              notAttendTimecards.push(timecardResult.Items[timecardResult.Items.length - 1])
+              break;
+            case "NotLeave":
+              notLeaveTimecards.push(timecardResult.Items[timecardResult.Items.length - 1])
+              break;
+            case "AlreadyLeave":
+              alreadyLeaveTimecards.push(timecardResult.Items[timecardResult.Items.length - 1])
+              break;
+        }
+      }
+      }
+    res.json({ notAttendTimecards, notLeaveTimecards, alreadyLeaveTimecards } )
+  } catch (err) {
+    next(err)
+  }
+}
