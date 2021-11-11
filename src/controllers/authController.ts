@@ -24,9 +24,9 @@ export const login = async (req: express.Request, res: express.Response, next: e
   };
   try {
     const result: any = await documentClient.get(params).promise();
-    if (!Object.keys(result).length) throw new HttpException(404, "User does not exist")
+    if (!Object.keys(result).length) throw new HttpException(404, "氏名が間違っています")
     const comparedPassword = await bcrypt.compare(password, result.Item.password);
-    if (!comparedPassword) throw new HttpException(400, "Your password is incorrect")
+    if (!comparedPassword) throw new HttpException(400, "パスワードが間違っています")
     const user: IUser = {
       name: result.Item.user,
       role: result.Item.role,
