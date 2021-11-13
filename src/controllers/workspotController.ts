@@ -94,7 +94,7 @@ export const newWorkspot = async (req: express.Request, res: express.Response, n
     await documentClient
       .put({ TableName: "Timecards", Item: params })
       .promise();
-    return res.json({ message: "Insert Success" });
+    return res.json({ message: "Insert Success", workspotName: formattedAddressName });
   } catch (err) {
     return next(err)
   }
