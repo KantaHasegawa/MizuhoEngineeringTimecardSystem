@@ -1,13 +1,13 @@
 import express from "express";
 import { check, validationResult } from "express-validator";
-import documentClient from "../dbconnect";
+import documentClient from "../helper/dbconnect";
 
 export const signupUserValidation = [
   check("username")
     .not()
     .isEmpty()
     .matches("^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$")
-    .custom((value) => {
+    .custom((value: string) => {
       const params = {
         TableName: "Timecards",
         Key: {
@@ -18,7 +18,7 @@ export const signupUserValidation = [
       return documentClient
         .get(params)
         .promise()
-        .then((result: any) => {
+        .then((result) => {
           if (Object.keys(result).length) {
             throw new Error("このユーザー名は既に使用されています");
           }

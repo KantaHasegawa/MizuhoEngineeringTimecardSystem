@@ -6,9 +6,6 @@ import {
   signupUser,
   updateUser,
   deleteUser,
-  indexUserRelation,
-  UserRelationSelectBoxItems,
-  updateUserRelation,
   userAllIDs,
 } from "../../controllers/userController";
 import {
@@ -19,19 +16,8 @@ const router = express.Router();
 
 router.get("/show/:name", authenticateToken, adminUserCheck, showUser);
 router.get("/index", authenticateToken, adminUserCheck, indexUser);
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/ids", userAllIDs);
-router.get(
-  "/relation/index/:username",
-  authenticateToken,
-  adminUserCheck,
-  indexUserRelation
-);
-router.get(
-  "/relation/selectbox/:username",
-  authenticateToken,
-  adminUserCheck,
-  UserRelationSelectBoxItems
-);
 router.post(
   "/signup",
   authenticateToken,
@@ -45,12 +31,6 @@ router.post(
   adminUserCheck,
   editUserValidation,
   updateUser
-);
-router.post(
-  "/relation/update",
-  authenticateToken,
-  adminUserCheck,
-  updateUserRelation
 );
 router.delete("/delete/:name", authenticateToken, adminUserCheck, deleteUser);
 

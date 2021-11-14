@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import documentClient from "../../dbconnect";
+import documentClient from "../../helper/dbconnect";
 import userRoute from "./userRouter";
 import authRoute from "./authRouter";
 import workspotRoute from "./workspotRouter";

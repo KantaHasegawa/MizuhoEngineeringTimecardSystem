@@ -1,6 +1,6 @@
 import express from "express";
-import documentClient from "../dbconnect";
-const XlsxPopulate = require("xlsx-populate");
+import documentClient from "../helper/dbconnect";
+import XlsxPopulate from "xlsx-populate";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -93,7 +93,7 @@ export const indexTimecard = (
     .catch((err) => next(err));
 };
 
-export const latestTimecard = async (
+export const latestTimecard = (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction
@@ -120,7 +120,7 @@ export const latestTimecard = async (
     .catch((err) => next(err));
 };
 
-export const commonTimecard = (
+export const commonTimecard = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction
@@ -134,68 +134,79 @@ export const commonTimecard = (
     },
     KeyConditionExpression: "#u = :userval AND begins_with(#a, :attendanceval)",
   };
-  documentClient
-    .query(params)
-    .promise()
-    .then((result) => {
-      const latestRecord = result.Items
-        ? result.Items[result.Items.length - 1]
-        : undefined;
-      if (!latestRecord || latestRecord.leave !== "none") {
-        const params = {
-          user: req.user.name,
-          attendance: dayjs().format("YYYYMMDDHHmmss"),
-          workspot: req.userLocation,
-          leave: "none",
-          rest: 0,
-          workTime: 0,
-          regularWorkTime: 0,
-          irregularWorkTime: 0,
-        };
-        documentClient
-          .put({
-            TableName: "Timecards",
-            Item: params,
-          })
-          .promise()
-          .then((result) => res.json({ message: "insert success" }))
-          .catch((err) => next(err));
-      } else {
-        const results = calculateWorkingTime(latestRecord.attendance);
-        const params = {
+
+  try {
+    const timecardsResult = await documentClient.query(params).promise();
+    type TypeLatestTimecard = {
+      attendance: string;
+      leave: string;
+    };
+    const timecardsResultItems = timecardsResult.Items as
+      | TypeLatestTimecard[]
+      | undefined;
+    const latestRecord = timecardsResultItems
+      ? timecardsResultItems[timecardsResultItems.length - 1]
+      : null;
+    if (!latestRecord || latestRecord.leave !== "none") {
+      const params = {
+        user: req.user.name,
+        attendance: dayjs().format("YYYYMMDDHHmmss"),
+        workspot: req.userLocation,
+        leave: "none",
+        rest: 0,
+        workTime: 0,
+        regularWorkTime: 0,
+        irregularWorkTime: 0,
+      };
+      await documentClient
+        .put({
           TableName: "Timecards",
-          Key: {
-            user: req.user.name,
-            attendance: latestRecord.attendance,
-          },
-          ExpressionAttributeNames: {
-            "#l": "leave",
-            "#r": "rest",
-            "#w": "workTime",
-            "#g": "regularWorkTime",
-            "#i": "irregularWorkTime",
-          },
-          ExpressionAttributeValues: {
-            ":lval": results.leave,
-            ":rval": results.rest,
-            ":wval": results.workTime,
-            ":gval": results.regularWorkTime,
-            ":ival": results.irregularWorkTime,
-          },
-          UpdateExpression:
-            "SET #l = :lval, #r = :rval, #w = :wval, #g = :gval, #i = :ival",
-        };
-        documentClient
-          .update(params)
-          .promise()
-          .then((result) => res.json({ message: "update success" }))
-          .catch((err) => next(err));
-      }
-    });
+          Item: params,
+        })
+        .promise();
+      res.json({ message: "insert success" });
+    } else {
+      const results = calculateWorkingTime(latestRecord.attendance);
+      const params = {
+        TableName: "Timecards",
+        Key: {
+          user: req.user.name,
+          attendance: latestRecord.attendance,
+        },
+        ExpressionAttributeNames: {
+          "#l": "leave",
+          "#r": "rest",
+          "#w": "workTime",
+          "#g": "regularWorkTime",
+          "#i": "irregularWorkTime",
+        },
+        ExpressionAttributeValues: {
+          ":lval": results.leave,
+          ":rval": results.rest,
+          ":wval": results.workTime,
+          ":gval": results.regularWorkTime,
+          ":ival": results.irregularWorkTime,
+        },
+        UpdateExpression:
+          "SET #l = :lval, #r = :rval, #w = :wval, #g = :gval, #i = :ival",
+      };
+      await documentClient.update(params).promise();
+      res.json({ message: "update success" });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+type TypeAdminNewTimecardRequestBody = {
+  user: string;
+  workspot: string;
+  attendance: string;
+  leave: string;
 };
 
 export const adminNewTimecard = (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeAdminNewTimecardRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -219,12 +230,17 @@ export const adminNewTimecard = (
       Item: params,
     })
     .promise()
-    .then((result) => res.json({ message: "insert success" }))
+    .then(() => res.json({ message: "insert success" }))
     .catch((err) => next(err));
 };
 
+type AdminDeleteTimecardRequestBody = {
+  user: string;
+  attendance: string;
+};
+
 export const adminDeleteTimecard = (
-  req: express.Request,
+  req: express.Request<unknown, unknown, AdminDeleteTimecardRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -238,7 +254,7 @@ export const adminDeleteTimecard = (
   documentClient
     .delete(params)
     .promise()
-    .then((result) => res.json({ message: "delete success" }))
+    .then(() => res.json({ message: "delete success" }))
     .catch((err) => next(err));
 };
 
@@ -262,7 +278,17 @@ export const excelTimecard = async (
     );
     const sheet1 = workbook.sheet("Sheet1");
     const results = await documentClient.query(params).promise();
-    const timecards: any = results.Items;
+    type TypeTimecard = {
+      attendance: string;
+      workTime: number;
+      regularWorkTime: number;
+      irregularWorkTime: number;
+      rest: number;
+    };
+    const timecards = results.Items as TypeTimecard[] | undefined;
+    if (!timecards) {
+      throw new HttpException(500, "Result is null");
+    }
     sheet1.cell("B3").value(req.params.username);
     sheet1.cell("B4").value(`${req.params.year}年 ${req.params.month}月`);
     for (const timecard of timecards) {
@@ -285,22 +311,27 @@ export const excelTimecard = async (
 
 type TypeTimecardStatus = "NotAttend" | "NotLeave" | "AlreadyLeave";
 
-const isTimecardStatus = (timecard: any): TypeTimecardStatus => {
-  const today = dayjs().format("YYYYMMDD");
-  const result =
-    timecard.leave === "none"
-      ? "NotLeave"
-      : timecard.attendance.slice(0, 8) === today
-      ? "AlreadyLeave"
-      : "NotAttend";
-  return result;
-};
-
 export const getAllUserLatestTimecard = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction
 ) => {
+  type TypeTimecard = {
+    attendance: string;
+    leave: string;
+  };
+
+  const isTimecardStatus = (timecard: TypeTimecard): TypeTimecardStatus => {
+    const today = dayjs().format("YYYYMMDD");
+    const result =
+      timecard.leave === "none"
+        ? "NotLeave"
+        : timecard.attendance.slice(0, 8) === today
+        ? "AlreadyLeave"
+        : "NotAttend";
+    return result;
+  };
+
   const userIndexParams = {
     TableName: "Timecards",
     IndexName: "usersIndex",
@@ -310,50 +341,55 @@ export const getAllUserLatestTimecard = async (
     FilterExpression: "#r = :rval",
   };
   try {
-    const usersResult: any = await documentClient
-      .query(userIndexParams)
-      .promise();
+    const usersResult = await documentClient.query(userIndexParams).promise();
     const notAttendTimecards = [];
     const notLeaveTimecards = [];
     const alreadyLeaveTimecards = [];
-    for (const user of usersResult.Items) {
-      const params = {
-        TableName: "Timecards",
-        ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
-        ExpressionAttributeValues: {
-          ":userval": user.user,
-          ":attendanceval": "2",
-        },
-        KeyConditionExpression:
-          "#u = :userval AND begins_with(#a, :attendanceval)",
+    if (usersResult.Items?.length) {
+      type TypeUser = {
+        user: string;
       };
-      const timecardResult: any = await documentClient.query(params).promise();
-      if (!timecardResult.Items.length) {
-        notAttendTimecards.push({
-          user: user.user,
-          attendance: "none",
-        });
-      } else {
-        switch (
-          isTimecardStatus(
-            timecardResult.Items[timecardResult.Items.length - 1]
-          )
-        ) {
-          case "NotAttend":
-            notAttendTimecards.push(
-              timecardResult.Items[timecardResult.Items.length - 1]
-            );
-            break;
-          case "NotLeave":
-            notLeaveTimecards.push(
-              timecardResult.Items[timecardResult.Items.length - 1]
-            );
-            break;
-          case "AlreadyLeave":
-            alreadyLeaveTimecards.push(
-              timecardResult.Items[timecardResult.Items.length - 1]
-            );
-            break;
+      const usersResultItems = usersResult.Items as TypeUser[];
+      for (const user of usersResultItems) {
+        const params = {
+          TableName: "Timecards",
+          ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
+          ExpressionAttributeValues: {
+            ":userval": user.user,
+            ":attendanceval": "2",
+          },
+          KeyConditionExpression:
+            "#u = :userval AND begins_with(#a, :attendanceval)",
+        };
+        const timecardResult = await documentClient.query(params).promise();
+        const timecardResultItems = timecardResult.Items as TypeTimecard[];
+        if (!timecardResultItems.length) {
+          notAttendTimecards.push({
+            user: user.user,
+            attendance: "none",
+          });
+        } else {
+          switch (
+            isTimecardStatus(
+              timecardResultItems[timecardResultItems.length - 1]
+            )
+          ) {
+            case "NotAttend":
+              notAttendTimecards.push(
+                timecardResultItems[timecardResultItems.length - 1]
+              );
+              break;
+            case "NotLeave":
+              notLeaveTimecards.push(
+                timecardResultItems[timecardResultItems.length - 1]
+              );
+              break;
+            case "AlreadyLeave":
+              alreadyLeaveTimecards.push(
+                timecardResultItems[timecardResultItems.length - 1]
+              );
+              break;
+          }
         }
       }
     }

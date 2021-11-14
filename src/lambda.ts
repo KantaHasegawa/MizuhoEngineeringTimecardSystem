@@ -1,3 +1,4 @@
+/* eslint-disable */
 import app from "./app";
 const serverlessExpress = require("@vendia/serverless-express");
 const server = serverlessExpress.createServer(app);

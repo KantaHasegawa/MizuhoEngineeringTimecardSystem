@@ -23,6 +23,7 @@ router.get(
   indexTimecard
 );
 router.get("/latest/:username", authenticateToken, latestTimecard);
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/latestall", getAllUserLatestTimecard);
 router.get(
   "/excel/:username/:year/:month",

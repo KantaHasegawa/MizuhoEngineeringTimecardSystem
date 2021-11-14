@@ -1,13 +1,15 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { GeoPosition } from "geo-position.ts";
-import documentClient from "../dbconnect";
+import documentClient from "./dbconnect";
 import HttpException from "../exceptions/HttpException";
+import { TypeUserToken } from "../controllers/authController";
 
 export const errorMiddleware = (
   err: HttpException,
   req: express.Request,
   res: express.Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: express.NextFunction
 ) => {
   const status = err.status || 500;
@@ -29,8 +31,9 @@ export const authenticateToken = (
     return next(new HttpException(402, "Authentication token is null"));
   const accessTokenSecret: jwt.Secret =
     process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret";
-  jwt.verify(token, accessTokenSecret, (err: any, user: any) => {
+  jwt.verify(token, accessTokenSecret, { complete: false }, (err, payload) => {
     if (err) return next(err);
+    const user = payload as TypeUserToken;
     req.user = user;
   });
   next();
@@ -56,8 +59,19 @@ export const adminUserOrAuthenticatedUserCheck = (
   next();
 };
 
+type TypeCheckUserLocation = {
+  lat: number;
+  lon: number;
+};
+
+type TypeWorkspot = {
+  workspot: string;
+  latitude: number;
+  longitude: number;
+};
+
 export const checkUserLocation = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeCheckUserLocation>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -70,7 +84,10 @@ export const checkUserLocation = async (
   };
   try {
     const result = await documentClient.query(params).promise();
-    const workspots: any = result.Items;
+    const workspots = result.Items as TypeWorkspot[] | undefined;
+    if (!workspots?.length) {
+      throw new HttpException(500, "Result is empty");
+    }
     const userLocation: GeoPosition = new GeoPosition(
       req.body.lat,
       req.body.lon
@@ -100,7 +117,7 @@ export const checkUserLocation = async (
       req.userLocation = userLocation;
     }
     next();
-  } catch (err: any) {
+  } catch (err) {
     next(err);
   }
 };

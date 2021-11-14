@@ -1,6 +1,6 @@
 import express from "express";
-import geocoder from "../gecorderSetting";
-import documentClient from "../dbconnect";
+import geocoder from "../helper/gecorderSetting";
+import documentClient from "../helper/dbconnect";
 import dayjs from "dayjs";
 import "dayjs/locale/ja";
 import HttpException from "../exceptions/HttpException";
@@ -63,7 +63,11 @@ export const workspotAllIDs = async (
   };
   try {
     const result = await documentClient.query(params).promise();
-    const response = result.Items?.map((item) => {
+    type TypeWorksopt = {
+      workspot: string;
+    };
+    const resultItems = result.Items as TypeWorksopt[] | undefined;
+    const response = resultItems?.map((item) => {
       return { params: { id: item.workspot } };
     });
     res.json(response);
@@ -72,30 +76,13 @@ export const workspotAllIDs = async (
   }
 };
 
-export const indexWorkspotNameOnly = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const params = {
-    TableName: "Timecards",
-    ExpressionAttributeNames: { "#u": "user" },
-    ExpressionAttributeValues: { ":val": "workspot" },
-    KeyConditionExpression: "#u = :val",
-  };
-  try {
-    const result = await documentClient.query(params).promise();
-    const workspots = result.Items?.map((item) => {
-      return item.workspot;
-    });
-    res.json({ params: workspots });
-  } catch (err) {
-    next(err);
-  }
+type TypeNewWorkspotRequestBody = {
+  lat: number;
+  lng: number;
 };
 
 export const newWorkspot = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeNewWorkspotRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -129,8 +116,13 @@ export const newWorkspot = async (
   }
 };
 
+type TypeDeleteWorkspot = {
+  attendance: string;
+  workspot: string;
+};
+
 export const deleteWorkspot = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeDeleteWorkspot>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -154,86 +146,33 @@ export const deleteWorkspot = async (
 
   try {
     const relationResult = await documentClient.query(relationParams).promise();
-    const requestArray = relationResult.Items!.map((item) => {
-      return {
-        DeleteRequest: {
-          Key: {
-            user: item.user,
-            attendance: `relation ${workspot}`,
+    type TypeRelation = {
+      user: string;
+    };
+    const relationResultItems = relationResult.Items as
+      | TypeRelation[]
+      | undefined;
+    if (relationResultItems) {
+      const requestArray = relationResultItems.map((item) => {
+        return {
+          DeleteRequest: {
+            Key: {
+              user: item.user,
+              attendance: `relation ${workspot}`,
+            },
           },
+        };
+      });
+      requestArray.push(workspotParams);
+      const requestParams = {
+        RequestItems: {
+          Timecards: requestArray,
         },
       };
-    });
-    requestArray.push(workspotParams);
-    const requestParams = {
-      RequestItems: {
-        Timecards: requestArray,
-      },
-    };
-    await documentClient.batchWrite(requestParams).promise();
-    res.json({ message: "delete success" });
+      await documentClient.batchWrite(requestParams).promise();
+      res.json({ message: "delete success" });
+    }
   } catch (err) {
     next(err);
   }
-};
-
-export const updateWorkspotRelation = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const users = req.body.users;
-  const workspot = req.body.workspot;
-  try {
-    const result = await geocoder.geocode(workspot);
-    for (const user of users) {
-      if (user.delete === "true") {
-        const params = {
-          TableName: "Timecards",
-          Key: {
-            user: user.name,
-            attendance: `relation ${workspot}`,
-          },
-        };
-        await documentClient.delete(params).promise();
-      } else {
-        const params = {
-          user: user.name,
-          attendance: `relation ${workspot}`,
-          workspot: workspot,
-          latitude: result[0].latitude,
-          longitude: result[0].longitude,
-        };
-        await documentClient
-          .put({
-            TableName: "Timecards",
-            Item: params,
-          })
-          .promise();
-      }
-    }
-    return res.json({ message: "update success" });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-export const indexWorkspotRelation = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const workspot = req.params.workspot;
-  const params = {
-    TableName: "Timecards",
-    IndexName: "usersIndex",
-    ExpressionAttributeNames: { "#a": "attendance" },
-    ExpressionAttributeValues: { ":val": `relation ${workspot}` },
-    KeyConditionExpression: "#a = :val",
-  };
-  documentClient
-    .query(params)
-    .promise()
-    .then((result) => res.json({ relations: result.Items }))
-    .catch((err) => next(err));
 };

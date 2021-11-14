@@ -1,6 +1,6 @@
 import express from "express";
 import { check, validationResult } from "express-validator";
-import documentClient from "../dbconnect";
+import documentClient from "../helper/dbconnect";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -38,26 +38,32 @@ export const adminNewTimecardValidation = [
     .not()
     .isEmpty()
     .isNumeric()
-    .custom(async (value, { req }) => {
+    .custom(async (value: string, { req }) => {
       if (!isValidTime(value)) throw new Error("無効な時間です");
       const yearMonthDay = value.slice(0, 8);
       const params = {
         TableName: "Timecards",
         ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
         ExpressionAttributeValues: {
+          /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+          /* eslint-disable @typescript-eslint/no-unsafe-member-access */
           ":userval": req.body.user,
+          /* eslint-enable */
           ":attendanceval": `${yearMonthDay}`,
         },
         KeyConditionExpression:
           "#u = :userval AND begins_with(#a, :attendanceval)",
       };
-      const results: any = await documentClient.query(params).promise();
-      if (Object.keys(results.Items).length) throw new Error("登録済みです");
+      const results = await documentClient.query(params).promise();
+      if (results.Items?.length) throw new Error("登録済みです");
       return true;
     }),
-  check("leave").custom((value, { req }) => {
+  check("leave").custom((value: string, { req }) => {
     const dayjsObjLeave = dayjs(value);
+    /* eslint-disable @typescript-eslint/no-unsafe-argument */
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     const dayjsObjAttendance = dayjs(req.body.attendance);
+    /* eslint-enable */
     if (value) {
       if (!isValidTime(value)) throw new Error("無効な時間です");
       if (dayjsObjLeave.isSameOrBefore(dayjsObjAttendance))
@@ -70,7 +76,7 @@ export const adminNewTimecardValidation = [
   check("workspot")
     .not()
     .isEmpty()
-    .custom((value) => {
+    .custom((value: string) => {
       const params = {
         TableName: "Timecards",
         ExpressionAttributeNames: { "#u": "user", "#w": "workspot" },
@@ -81,9 +87,10 @@ export const adminNewTimecardValidation = [
       return documentClient
         .query(params)
         .promise()
-        .then((results: any) => {
-          if (!Object.keys(results.Items).length)
+        .then((results) => {
+          if (!results.Items?.length) {
             throw new Error("登録されていない勤務地です");
+          }
           return true;
         });
     }),

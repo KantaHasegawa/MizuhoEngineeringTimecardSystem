@@ -1,7 +1,6 @@
 import express from "express";
-const bcrypt = require("bcrypt");
-import documentClient from "../dbconnect";
-import geocoder from "../gecorderSetting";
+import bcrypt from "bcrypt";
+import documentClient from "../helper/dbconnect";
 
 export const showUser = (
   req: express.Request,
@@ -18,7 +17,6 @@ export const showUser = (
   documentClient
     .get(params)
     .promise()
-    // .then((result) => res.json({ "user": result.Item, "csrfToken": req.csrfToken() }))
     .then((result) => res.json({ user: result.Item }))
     .catch((err) => next(err));
 };
@@ -39,7 +37,6 @@ export const indexUser = (
   documentClient
     .query(params)
     .promise()
-    // .then((result) => {res.json({ "users": result.Items, "csrfToken": req.csrfToken() })})
     .then((result) => res.json({ params: result.Items }))
     .catch((err) => next(err));
 };
@@ -59,7 +56,11 @@ export const userAllIDs = async (
   };
   try {
     const result = await documentClient.query(params).promise();
-    const response = result.Items?.map((item) => {
+    type TypeUser = {
+      user: string;
+    };
+    const resultItems = result.Items as TypeUser[] | undefined;
+    const response = resultItems?.map((item) => {
       return { params: { id: item.user } };
     });
     res.json(response);
@@ -68,8 +69,13 @@ export const userAllIDs = async (
   }
 };
 
+type TypeSignupUserRequestBody = {
+  username: string;
+  password: string;
+};
+
 export const signupUser = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeSignupUserRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -90,12 +96,12 @@ export const signupUser = async (
       Item: params,
     })
     .promise()
-    .then((result) => res.json({ message: "insert seccess" }))
+    .then(() => res.json({ message: "insert seccess" }))
     .catch((err) => next(err));
 };
 
 export const updateUser = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeSignupUserRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -116,7 +122,7 @@ export const updateUser = async (
       Item: params,
     })
     .promise()
-    .then((result) => res.json({ message: "udpate seccess" }))
+    .then(() => res.json({ message: "udpate seccess" }))
     .catch((err) => next(err));
 };
 
@@ -142,124 +148,33 @@ export const deleteUser = async (
   };
   try {
     const relationResult = await documentClient.query(relationParams).promise();
-    const requestArray = relationResult.Items!.map((item) => {
-      return {
-        DeleteRequest: {
-          Key: {
-            user: username,
-            attendance: `relation ${item.workspot}`,
+    type TypeRelation = {
+      workspot: string;
+    };
+    const relationResultItems = relationResult.Items as
+      | TypeRelation[]
+      | undefined;
+    if (relationResultItems) {
+      const requestArray = relationResultItems.map((item) => {
+        return {
+          DeleteRequest: {
+            Key: {
+              user: username,
+              attendance: `relation ${item.workspot}`,
+            },
           },
+        };
+      });
+      requestArray.push(userParams);
+      const requestParams = {
+        RequestItems: {
+          Timecards: requestArray,
         },
       };
-    });
-    requestArray.push(userParams);
-    const requestParams = {
-      RequestItems: {
-        Timecards: requestArray,
-      },
-    };
-    await documentClient.batchWrite(requestParams).promise();
-    res.json({ message: "delete success" });
+      await documentClient.batchWrite(requestParams).promise();
+      res.json({ message: "delete success" });
+    }
   } catch (err) {
     next(err);
   }
-};
-
-export const updateUserRelation = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const user = req.body.user;
-  const workspots = req.body.workspots;
-  try {
-    for (const workspot of workspots) {
-      if (workspot.delete === "true") {
-        const params = {
-          TableName: "Timecards",
-          Key: {
-            user: user,
-            attendance: `relation ${workspot.workspot}`,
-          },
-        };
-        await documentClient.delete(params).promise();
-      } else {
-        const result = await geocoder.geocode(workspot.workspot);
-        const params = {
-          user: user,
-          attendance: `relation ${workspot.workspot}`,
-          workspot: workspot.workspot,
-          latitude: result[0].latitude,
-          longitude: result[0].longitude,
-        };
-        await documentClient
-          .put({
-            TableName: "Timecards",
-            Item: params,
-          })
-          .promise();
-      }
-    }
-    // return res.json({ "message": "insert success", "csrfToken": req.csrfToken() })
-    return res.json({ message: "insert success" });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const indexUserRelation = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const username = req.params.username;
-  const params = {
-    TableName: "Timecards",
-    ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
-    ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
-    KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
-  };
-  documentClient
-    .query(params)
-    .promise()
-    .then((result) => res.json({ params: result.Items }))
-    .catch((err) => next(err));
-};
-
-export const UserRelationSelectBoxItems = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const username = req.params.username;
-  const relationsParams = {
-    TableName: "Timecards",
-    ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
-    ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
-    KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
-  };
-  const workspotsParams = {
-    TableName: "Timecards",
-    ExpressionAttributeNames: { "#u": "user" },
-    ExpressionAttributeValues: { ":val": "workspot" },
-    KeyConditionExpression: "#u = :val",
-  };
-  const relationsResult = await documentClient.query(relationsParams).promise();
-  const workspotsResult = await documentClient.query(workspotsParams).promise();
-
-  const selectBoxItems = workspotsResult.Items?.map((item) => {
-    if (
-      !relationsResult.Items?.find(({ workspot }) => workspot === item.workspot)
-    ) {
-      return {
-        value: item.workspot,
-        label: item.workspot,
-      };
-    }
-  }).filter((item) => item);
-
-  res.json({
-    selectBoxItems: selectBoxItems,
-    relations: relationsResult.Items,
-  });
 };

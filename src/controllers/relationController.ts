@@ -1,6 +1,6 @@
 import express from "express";
-import documentClient from "../dbconnect";
-import geocoder from "../gecorderSetting";
+import documentClient from "../helper/dbconnect";
+import geocoder from "../helper/gecorderSetting";
 
 export const indexUserRelation = (
   req: express.Request,
@@ -39,24 +39,41 @@ export const UserRelationSelectBoxItems = async (
     ExpressionAttributeValues: { ":val": "workspot" },
     KeyConditionExpression: "#u = :val",
   };
-  const relationsResult = await documentClient.query(relationsParams).promise();
-  const workspotsResult = await documentClient.query(workspotsParams).promise();
+  try {
+    const relationsResult = await documentClient
+      .query(relationsParams)
+      .promise();
+    const workspotsResult = await documentClient
+      .query(workspotsParams)
+      .promise();
+    type TypeWorkspot = {
+      workspot: string;
+    };
+    const workspotsResultItems = workspotsResult.Items as
+      | TypeWorkspot[]
+      | undefined;
 
-  const selectBoxItems = workspotsResult.Items?.map((item) => {
-    if (
-      !relationsResult.Items?.find(({ workspot }) => workspot === item.workspot)
-    ) {
-      return {
-        value: item.workspot,
-        label: item.workspot,
-      };
-    }
-  }).filter((item) => item);
-
-  res.json({
-    selectBoxItems: selectBoxItems,
-    relations: relationsResult.Items,
-  });
+    const selectBoxItems = workspotsResultItems
+      ?.map((item) => {
+        if (
+          !relationsResult.Items?.find(
+            ({ workspot }) => workspot === item.workspot
+          )
+        ) {
+          return {
+            value: item.workspot,
+            label: item.workspot,
+          };
+        }
+      })
+      .filter((item) => item);
+    res.json({
+      selectBoxItems: selectBoxItems,
+      relations: relationsResult.Items,
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const indexWorkspotRelation = (
@@ -105,14 +122,20 @@ export const workspotRelationSelectBoxItems = async (
       .query(relationsParams)
       .promise();
     const usersResult = await documentClient.query(usersParams).promise();
-    const selectBoxItems = usersResult.Items?.map((item) => {
-      if (!relationsResult.Items?.find(({ user }) => user === item.user)) {
-        return {
-          value: item.user,
-          label: item.user,
-        };
-      }
-    }).filter((item) => item);
+    type TypeUser = {
+      user: string;
+    };
+    const usersResultItems = usersResult.Items as TypeUser[] | undefined;
+    const selectBoxItems = usersResultItems
+      ?.map((item) => {
+        if (!relationsResult.Items?.find(({ user }) => user === item.user)) {
+          return {
+            value: item.user,
+            label: item.user,
+          };
+        }
+      })
+      .filter((item) => item);
     res.json({
       selectBoxItems: selectBoxItems,
       relations: relationsResult.Items,
@@ -122,8 +145,13 @@ export const workspotRelationSelectBoxItems = async (
   }
 };
 
+type TypeNewRelationRequestBody = {
+  user: string;
+  workspot: string;
+};
+
 export const newRelation = async (
-  req: express.Request,
+  req: express.Request<unknown, unknown, TypeNewRelationRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -150,8 +178,13 @@ export const newRelation = async (
   }
 };
 
-export const deleteRelation = async (
-  req: express.Request,
+type TypeDeleteRelationRequestBody = {
+  user: string;
+  workspot: string;
+};
+
+export const deleteRelation = (
+  req: express.Request<unknown, unknown, TypeDeleteRelationRequestBody>,
   res: express.Response,
   next: express.NextFunction
 ) => {
@@ -167,6 +200,6 @@ export const deleteRelation = async (
   documentClient
     .delete(params)
     .promise()
-    .then((result) => res.json({ message: "delete success" }))
+    .then(() => res.json({ message: "delete success" }))
     .catch((err) => next(err));
 };
