@@ -81,7 +81,9 @@ export const newWorkspot = async (req: express.Request, res: express.Response, n
     const result = await geocoder.reverse({ lat: lat, lon: lon });
     if (!result[0].formattedAddress)
       return next(new HttpException(400, "Location information is invalid"));
-    const formattedAddressName = result[0].formattedAddress.split("、")[1];
+    const formattedAddressName = result[0].formattedAddress.startsWith("日本、") ?
+      result[0].formattedAddress.split("、")[1]
+      : result[0].formattedAddress
     const latitude = result[0].latitude;
     const longitude = result[0].longitude;
     const params = {
