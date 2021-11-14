@@ -131,7 +131,7 @@ export const newRelation = async (
   const workspot = req.body.workspot;
   try {
     const result = await geocoder.geocode(workspot);
-    let params = {
+    const params = {
       user: user,
       attendance: `relation ${workspot}`,
       workspot: workspot,

@@ -1,11 +1,10 @@
-import NodeGeocoder from 'node-geocoder';
-
+import NodeGeocoder from "node-geocoder";
 
 const options: NodeGeocoder.Options = {
-  provider: 'google',
-  language: 'ja',
+  provider: "google",
+  language: "ja",
   apiKey: process.env.GOOGLE_API_KEY,
-  formatter: null
+  formatter: null,
 };
 
 const geocoder = NodeGeocoder(options);

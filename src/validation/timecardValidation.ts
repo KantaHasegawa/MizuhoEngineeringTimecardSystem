@@ -9,7 +9,7 @@ dayjs.locale("ja");
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const isValidTime = (time: string): Boolean => {
+const isValidTime = (time: string): boolean => {
   const year = Number(time.slice(0, 4));
   const month = Number(time.slice(4, 6));
   const day = Number(time.slice(6, 8));
@@ -53,7 +53,7 @@ export const adminNewTimecardValidation = [
       };
       const results: any = await documentClient.query(params).promise();
       if (Object.keys(results.Items).length) throw new Error("登録済みです");
-      return true
+      return true;
     }),
   check("leave").custom((value, { req }) => {
     const dayjsObjLeave = dayjs(value);
