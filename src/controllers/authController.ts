@@ -160,5 +160,5 @@ export const currentuser = (
 const generateAccessToken = (user: TypeUserToken) => {
   const accessTokenSecret: jwt.Secret =
     process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret";
-  return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });
+  return jwt.sign(user, accessTokenSecret, { expiresIn: "10m" });
 };

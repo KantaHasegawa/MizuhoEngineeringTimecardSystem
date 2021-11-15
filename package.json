@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@line/bot-sdk": "^7.4.0",
     "@types/csurf": "^1.11.2",
     "@types/express-session": "^1.17.4",
     "@types/jsonwebtoken": "^8.5.5",

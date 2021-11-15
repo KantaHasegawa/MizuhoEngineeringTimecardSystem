@@ -9,6 +9,7 @@ import HttpException from "../exceptions/HttpException";
 dayjs.locale("ja");
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+import { Client, middleware } from "@line/bot-sdk";
 
 type TypeCalculateWorkingTimeReturn = {
   workTime: number;
@@ -16,6 +17,25 @@ type TypeCalculateWorkingTimeReturn = {
   rest: number;
   regularWorkTime: number;
   irregularWorkTime: number;
+};
+
+export const pushLINE = async (text: string) => {
+  const config = {
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || "default",
+    channelSecret: process.env.LINE_CHANNEL_SECRET || "default",
+  };
+  console.log(config);
+  middleware(config);
+  const client = new Client(config);
+  try {
+    await client.broadcast({
+      type: "text",
+      text: text,
+    });
+  } catch (err) {
+    console.log(err);
+    throw new HttpException(500, "Failed push LINE message");
+  }
 };
 
 const calculateWorkingTime = (
@@ -148,10 +168,13 @@ export const commonTimecard = async (
       ? timecardsResultItems[timecardsResultItems.length - 1]
       : null;
     if (!latestRecord || latestRecord.leave !== "none") {
+      const user = req.user.name;
+      const attendance = dayjs().format("YYYYMMDDHHmmss");
+      const workspot = req.userLocation;
       const params = {
-        user: req.user.name,
-        attendance: dayjs().format("YYYYMMDDHHmmss"),
-        workspot: req.userLocation,
+        user: user,
+        attendance: attendance,
+        workspot: workspot,
         leave: "none",
         rest: 0,
         workTime: 0,
@@ -164,9 +187,21 @@ export const commonTimecard = async (
           Item: params,
         })
         .promise();
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      pushLINE(
+        `${user}さんが${workspot}で${attendance.slice(
+          4,
+          6
+        )}月${attendance.slice(6, 8)}日${attendance.slice(
+          8,
+          10
+        )}時${attendance.slice(10, 12)}分に出勤しました`
+      );
       res.json({ message: "insert success" });
     } else {
       const results = calculateWorkingTime(latestRecord.attendance);
+      const user = req.user.name;
+      const leave = results.leave;
       const params = {
         TableName: "Timecards",
         Key: {
@@ -191,6 +226,13 @@ export const commonTimecard = async (
           "SET #l = :lval, #r = :rval, #w = :wval, #g = :gval, #i = :ival",
       };
       await documentClient.update(params).promise();
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      pushLINE(
+        `${user}さんが${leave.slice(4, 6)}月${leave.slice(6, 8)}日${leave.slice(
+          8,
+          10
+        )}時${leave.slice(10, 12)}分に退勤しました`
+      );
       res.json({ message: "update success" });
     }
   } catch (err) {
@@ -362,7 +404,9 @@ export const getAllUserLatestTimecard = async (
             "#u = :userval AND begins_with(#a, :attendanceval)",
         };
         const timecardResult = await documentClient.query(params).promise();
-        const timecardResultItems = timecardResult.Items as TypeTimecard[] | undefined;
+        const timecardResultItems = timecardResult.Items as
+          | TypeTimecard[]
+          | undefined;
         if (!timecardResultItems || !timecardResultItems.length) {
           notAttendTimecards.push({
             user: user.user,
