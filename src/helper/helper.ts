@@ -86,7 +86,7 @@ export const checkUserLocation = async (
     const result = await documentClient.query(params).promise();
     const workspots = result.Items as TypeWorkspot[] | undefined;
     if (!workspots?.length) {
-      throw new HttpException(500, "Result is empty");
+      throw new HttpException(500, "登録された勤務地が存在しません");
     }
     const userLocation: GeoPosition = new GeoPosition(
       req.body.lat,

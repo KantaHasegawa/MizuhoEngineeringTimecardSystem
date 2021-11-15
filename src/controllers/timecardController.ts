@@ -345,7 +345,7 @@ export const getAllUserLatestTimecard = async (
     const notAttendTimecards = [];
     const notLeaveTimecards = [];
     const alreadyLeaveTimecards = [];
-    if (usersResult.Items?.length) {
+    if (usersResult.Items) {
       type TypeUser = {
         user: string;
       };
@@ -362,8 +362,8 @@ export const getAllUserLatestTimecard = async (
             "#u = :userval AND begins_with(#a, :attendanceval)",
         };
         const timecardResult = await documentClient.query(params).promise();
-        const timecardResultItems = timecardResult.Items as TypeTimecard[];
-        if (!timecardResultItems.length) {
+        const timecardResultItems = timecardResult.Items as TypeTimecard[] | undefined;
+        if (!timecardResultItems || !timecardResultItems.length) {
           notAttendTimecards.push({
             user: user.user,
             attendance: "none",

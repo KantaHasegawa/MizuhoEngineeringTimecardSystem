@@ -95,7 +95,7 @@ export const token = async (
   };
   const result = await documentClient.query(params).promise();
   const resultItems = result.Items as TypeTokenResponse[] | undefined;
-  if (!resultItems?.length) {
+  if (!resultItems) {
     throw new HttpException(500, "Result is empty");
   }
   const blackList = resultItems.map((item) => item.attendance);
