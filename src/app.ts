@@ -4,7 +4,7 @@ import router from "./routes/v1/index";
 import cors from "cors";
 import { errorMiddleware } from "./helper/helper";
 
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = [process.env.CORS_URL || "default"];
 
 const options: cors.CorsOptions = {
   origin: allowedOrigins,
