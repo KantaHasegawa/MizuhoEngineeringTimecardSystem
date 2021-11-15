@@ -64,7 +64,11 @@ export const login = async (
     const refreshToken = jwt.sign(user, refreshTokenSecret, {
       expiresIn: "90d",
     });
-    res.cookie("refreshToken", refreshToken);
+    if (process.env.NODE_ENV === "production") {
+      res.cookie("refreshToken", refreshToken, { sameSite: "none", secure: true });
+    } else {
+      res.cookie("refreshToken", refreshToken);
+    }
     res.json({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (err) {
     next(err);
