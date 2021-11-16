@@ -65,7 +65,7 @@ export const login = async (
       expiresIn: "90d",
     });
     if (process.env.NODE_ENV === "production") {
-      res.cookie("refreshToken", refreshToken, { sameSite: "none", secure: true });
+      res.cookie("refreshToken", refreshToken, { sameSite: "none", secure: true, domain: process.env.DOMAIN});
     } else {
       res.cookie("refreshToken", refreshToken);
     }
