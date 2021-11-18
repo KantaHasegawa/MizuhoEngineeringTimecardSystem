@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -65,18 +66,24 @@ export const login = async (
       expiresIn: "90d",
     });
     if (process.env.NODE_ENV === "production") {
-      res.cookie("refreshToken", refreshToken, { sameSite: "none", secure: true, domain: process.env.DOMAIN});
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        domain: process.env.DOMAIN,
+      });
     } else {
-      res.cookie("refreshToken", refreshToken);
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        domain: "localhost",
+      });
     }
-    res.json({ accessToken: accessToken, refreshToken: refreshToken });
+    res.json({ accessToken: accessToken });
   } catch (err) {
     next(err);
   }
-};
-
-type TypeTokenRequestBody = {
-  refreshToken: string;
 };
 
 type TypeTokenResponse = {
@@ -84,13 +91,15 @@ type TypeTokenResponse = {
 };
 
 export const token = async (
-  req: express.Request<unknown, unknown, TypeTokenRequestBody>,
+  req: express.Request,
   res: express.Response,
   next: express.NextFunction
 ) => {
-  const refreshToken = req.body.refreshToken;
-  if (refreshToken == null)
+  /* eslint-disable */
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken == null) {
     return next(new HttpException(403, "RefreshToken is null"));
+  }
   const params = {
     TableName: "Timecards",
     ExpressionAttributeNames: { "#u": "user" },
@@ -107,7 +116,7 @@ export const token = async (
     return next(new HttpException(403, "Invalid refreshToken"));
   const refreshTokenSecret: jwt.Secret =
     process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret";
-  jwt.verify(refreshToken, refreshTokenSecret, (err, payload) => {
+  jwt.verify(refreshToken, refreshTokenSecret, (err: any, payload: any) => {
     if (err) return next(err);
     if (!payload?.name || !payload?.role) {
       next(new HttpException(500, "User is not found"));
@@ -121,6 +130,7 @@ export const token = async (
   });
 };
 
+
 type TypeLogoutRequestBody = {
   refreshToken: string;
 };
@@ -132,7 +142,7 @@ export const logout = (
 ) => {
   const params = {
     user: "refreshTokenBlackList",
-    attendance: req.body.refreshToken,
+    attendance: req.cookies.refreshToken,
     expirationTime: dayjs.utc().add(1, "week").unix(),
   };
   return documentClient
@@ -144,6 +154,7 @@ export const logout = (
     .then(() => res.json({ message: "Logout success" }))
     .catch((err) => next(err));
 };
+/* eslint-enable */
 
 export const currentuser = (
   req: express.Request,
@@ -164,5 +175,5 @@ export const currentuser = (
 const generateAccessToken = (user: TypeUserToken) => {
   const accessTokenSecret: jwt.Secret =
     process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret";
-  return jwt.sign(user, accessTokenSecret, { expiresIn: "10m" });
+  return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });
 };

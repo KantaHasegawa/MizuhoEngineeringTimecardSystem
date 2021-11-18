@@ -10,9 +10,9 @@ const router = express.Router();
 
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.post("/login", login);
-router.post("/logout", authenticateToken, logout);
+router.get("/logout", authenticateToken, logout);
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
-router.post("/refresh", token);
+router.get("/refresh", token);
 router.get("/currentuser", currentuser);
 
 export default router;
