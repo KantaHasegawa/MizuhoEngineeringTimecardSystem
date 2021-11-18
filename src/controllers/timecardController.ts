@@ -131,10 +131,21 @@ export const latestTimecard = (
     .query(params)
     .promise()
     .then((result) => {
-      if (!result?.Items) {
+      if (!result) {
         throw new HttpException(406, "Latest TimeCard does not exist");
       } else {
-        res.json(result.Items[result.Items.length - 1]);
+        const dummyData = {
+          user: req.params.username,
+          workspot: "dummySpot",
+          attendance: "190001010000",
+          leave: "190001010000",
+          rest: 0,
+          workTime: 0,
+          regularWorkTime: 0,
+          irregularWorkTime: 0,
+        };
+        console.log(result.Items)
+        res.json(result.Items && result.Items.length ? result.Items[result.Items.length - 1] : dummyData);
       }
     })
     .catch((err) => next(err));

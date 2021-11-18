@@ -13,6 +13,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
+        - dynamodb:BatchWriteItem
       Resource:
         - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards
         - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards/index/*
