@@ -144,8 +144,12 @@ export const latestTimecard = (
           regularWorkTime: 0,
           irregularWorkTime: 0,
         };
-        console.log(result.Items)
-        res.json(result.Items && result.Items.length ? result.Items[result.Items.length - 1] : dummyData);
+        console.log(result.Items);
+        res.json(
+          result.Items && result.Items.length
+            ? result.Items[result.Items.length - 1]
+            : dummyData
+        );
       }
     })
     .catch((err) => next(err));
@@ -351,12 +355,13 @@ export const excelTimecard = async (
       sheet1.cell(`D${row}`).value(timecard.irregularWorkTime);
       sheet1.cell(`E${row}`).value(timecard.rest);
     }
-    await workbook.toFileAsync(
-      `public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`
-    );
-    res.download(
-      `public/tmp/${req.params.year}年${req.params.month}月${req.params.username}.xlsx`
-    );
+    const encodedWorkbook = await workbook.outputAsync("base64");
+    res.set({
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment;`,
+    });
+    res.status(200).send(encodedWorkbook);
   } catch (err) {
     next(err);
   }

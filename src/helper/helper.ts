@@ -14,6 +14,7 @@ export const errorMiddleware = (
 ) => {
   const status = err.status || 500;
   const message = err.message || "Something went wrong";
+  console.log(err)
   res.status(status).send({
     status,
     message,
