@@ -1,3 +1,5 @@
+org: kantahasegawa
+app: mizuho-timecard
 service: mizuho-timecard
 
 provider:

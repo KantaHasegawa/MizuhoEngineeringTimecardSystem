@@ -4,10 +4,12 @@ import documentClient from "../helper/dbconnect";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import isLeapYear from "dayjs/plugin/isLeapYear";
 import "dayjs/locale/ja";
 dayjs.locale("ja");
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+dayjs.extend(isLeapYear);
 
 const isValidTime = (time: string): boolean => {
   const year = Number(time.slice(0, 4));
@@ -21,13 +23,40 @@ const isValidTime = (time: string): boolean => {
   } else if (
     !(2021 <= year && year <= 2100) ||
     !(1 <= month && month <= 12) ||
-    !(1 <= day && day <= 31) ||
     !(0 <= hour && hour <= 24) ||
     !(0 <= minute && minute <= 60) ||
     !(0 <= second && second <= 60)
   ) {
     return false;
+  } else if (month == 2) {
+    if (dayjs(year).isLeapYear()) {
+      if (!(1 <= day && day <= 29)) {
+        return false;
+      }
+      return true;
+    } else {
+      if (!(1 <= day && day <= 28)) {
+        return false;
+      }
+      return true;
+    }
+  } else if (
+    month == 1 ||
+    month == 3 ||
+    month == 5 ||
+    month == 7 ||
+    month == 8 ||
+    month == 10 ||
+    month == 12
+  ) {
+    if (!(1 <= day && day <= 31)) {
+      return false;
+    }
+    return true;
   } else {
+    if (!(1 <= day && day <= 30)) {
+      return false;
+    }
     return true;
   }
 };
