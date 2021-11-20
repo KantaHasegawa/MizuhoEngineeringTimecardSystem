@@ -1,19 +1,13 @@
 import express from "express";
 import { adminUserCheck, authenticateToken } from "../../helper/helper";
-import {
-  showWorkspot,
-  indexWorkspot,
-  newWorkspot,
-  deleteWorkspot,
-  workspotAllIDs,
-} from "../../controllers/workspotController";
+import WorkspotController from "../../controllers/workspotController";
 const router = express.Router();
+const Controller = new WorkspotController()
 
-router.get("/show/:name", authenticateToken, adminUserCheck, showWorkspot);
-router.get("/index", authenticateToken, adminUserCheck, indexWorkspot);
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
-router.get("/ids", workspotAllIDs);
-router.post("/new", authenticateToken, adminUserCheck, newWorkspot);
-router.post("/delete", authenticateToken, adminUserCheck, deleteWorkspot);
+router.get("/show/:name", authenticateToken, adminUserCheck, Controller.show);
+router.get("/index", authenticateToken, adminUserCheck, Controller.index);
+router.get("/ids", Controller.allIDs);
+router.post("/new", authenticateToken, adminUserCheck, Controller.new);
+router.post("/delete", authenticateToken, adminUserCheck, Controller.delete);
 
 export default router;
