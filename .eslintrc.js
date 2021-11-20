@@ -21,5 +21,6 @@ module.exports = {
     'prettier',
   ],
   rules: {
+    "no-useless-catch":"off"
   },
 };
