@@ -1,7 +1,12 @@
 import bcrypt from "bcrypt";
-import documentClient from "../helper/dbconnect";
 
 class UserModel {
+  db: AWS.DynamoDB.DocumentClient;
+
+  constructor(db: AWS.DynamoDB.DocumentClient) {
+    this.db = db;
+  }
+
   get = async (name: string) => {
     const params = {
       TableName: "Timecards",
@@ -11,7 +16,7 @@ class UserModel {
       },
     };
     try {
-      const result = await documentClient.get(params).promise();
+      const result = await this.db.get(params).promise();
       return { user: result.Item };
     } catch (err) {
       throw err;
@@ -28,7 +33,7 @@ class UserModel {
       FilterExpression: "#r = :rval",
     };
     try {
-      const result = await documentClient.query(params).promise();
+      const result = await this.db.query(params).promise();
       return { params: result.Items };
     } catch (err) {
       throw err;
@@ -45,7 +50,7 @@ class UserModel {
       FilterExpression: "#r = :rval",
     };
     try {
-      const result = await documentClient.query(params).promise();
+      const result = await this.db.query(params).promise();
       type TypeUser = {
         user: string;
       };
@@ -68,7 +73,7 @@ class UserModel {
       role: "common",
     };
     try {
-      await documentClient
+      await this.db
         .put({
           TableName: "Timecards",
           Item: params,
@@ -89,7 +94,7 @@ class UserModel {
       role: "common",
     };
     try {
-      await documentClient
+      await this.db
         .put({
           TableName: "Timecards",
           Item: params,
@@ -117,7 +122,7 @@ class UserModel {
       KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
     };
     try {
-      const relationResult = await documentClient
+      const relationResult = await this.db
         .query(relationParams)
         .promise();
       type TypeRelation = {
@@ -143,7 +148,7 @@ class UserModel {
             Timecards: requestArray,
           },
         };
-        await documentClient.batchWrite(requestParams).promise();
+        await this.db.batchWrite(requestParams).promise();
         return { message: "Delete Success" };
       }
     } catch (err) {

@@ -1,6 +1,7 @@
 import express from "express";
 import UserModel from "../models/user";
-const Model = new UserModel();
+import db from '../helper/dbconnect'
+const Model = new UserModel(db);
 
 type RequestBody = {
   username: string;

@@ -11,7 +11,6 @@ const Controller = new UserController();
 
 router.get("/show/:name", authenticateToken, adminUserCheck, Controller.show);
 router.get("/index", authenticateToken, adminUserCheck, Controller.index);
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/ids", Controller.allIDs);
 router.post(
   "/signup",

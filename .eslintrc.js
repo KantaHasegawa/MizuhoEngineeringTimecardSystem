@@ -21,6 +21,7 @@ module.exports = {
     'prettier',
   ],
   rules: {
-    "no-useless-catch":"off"
+    "no-useless-catch": "off",
+    "@typescript-eslint/no-misused-promises": "off"
   },
 };
