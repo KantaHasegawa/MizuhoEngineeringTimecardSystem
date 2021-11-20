@@ -1,18 +1,13 @@
 import express from "express";
-import {
-  login,
-  token,
-  logout,
-  currentuser,
-} from "../../controllers/authController";
+import AuthController from "../../controllers/authController";
 import { authenticateToken } from "../../helper/helper";
 const router = express.Router();
-
+const Controller = new AuthController();
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
-router.post("/login", login);
-router.get("/logout", authenticateToken, logout);
+router.post("/login", Controller.login);
+router.get("/logout", authenticateToken, Controller.logout);
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
-router.get("/refresh", token);
-router.get("/currentuser", currentuser);
+router.get("/refresh", Controller.token);
+router.get("/currentuser", Controller.currentuser);
 
 export default router;

@@ -131,7 +131,6 @@ class Timecard {
           regularWorkTime: 0,
           irregularWorkTime: 0,
         };
-        console.log(result.Items);
         return result.Items && result.Items.length
           ? result.Items[result.Items.length - 1]
           : dummyData;
