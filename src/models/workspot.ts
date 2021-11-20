@@ -84,6 +84,20 @@ class Workspot {
         : result[0].formattedAddress;
       const latitude = result[0].latitude;
       const longitude = result[0].longitude;
+
+      const vaildationParams = {
+        TableName: "Timecards",
+        ExpressionAttributeNames: { "#u": "user", "#t": "latitude", "#g": "longitude" },
+        ExpressionAttributeValues: { ":uval": "workspot", ":tval": latitude, ":gval": longitude },
+        KeyConditionExpression: "#u = :uval",
+        FilterExpression: "#t = :tval AND #g = :gval",
+      };
+
+      const validationResult = await this.db.query(vaildationParams).promise();
+      if (validationResult.Items?.length) {
+        throw new HttpException(500, "この勤務地は既に登録されています")
+      }
+
       const params = {
         user: "workspot",
         attendance: `workspot ${formattedAddressName}`,
