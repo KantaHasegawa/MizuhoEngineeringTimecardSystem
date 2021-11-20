@@ -6,44 +6,38 @@ import {
   checkUserLocation,
 } from "../../helper/helper";
 import { adminNewTimecardValidation } from "../../validation/timecardValidation";
-import {
-  indexTimecard,
-  latestTimecard,
-  commonTimecard,
-  adminNewTimecard,
-  adminDeleteTimecard,
-  excelTimecard,
-  getAllUserLatestTimecard,
-} from "../../controllers/timecardController";
+import TimecardController from "../../controllers/timecardController";
+
+const Controller = new TimecardController();
 
 router.get(
   "/index/:username/:year/:month",
   authenticateToken,
   adminUserCheck,
-  indexTimecard
+  Controller.index
 );
-router.get("/latest/:username", authenticateToken, latestTimecard);
+router.get("/latest/:username", authenticateToken, Controller.latest);
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
-router.get("/latestall", getAllUserLatestTimecard);
+router.get("/latestall", Controller.latestAll);
 router.get(
   "/excel/:username/:year/:month",
   authenticateToken,
   adminUserCheck,
-  excelTimecard
+  Controller.excel
 );
-router.post("/common", authenticateToken, checkUserLocation, commonTimecard);
+router.post("/common", authenticateToken, checkUserLocation, Controller.common);
 router.post(
   "/admin/new",
   authenticateToken,
   adminUserCheck,
   adminNewTimecardValidation,
-  adminNewTimecard
+  Controller.new
 );
 router.post(
   "/admin/delete",
   authenticateToken,
   adminUserCheck,
-  adminDeleteTimecard
+  Controller.delete
 );
 
 export default router;
