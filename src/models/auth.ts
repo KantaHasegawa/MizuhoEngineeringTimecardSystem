@@ -138,13 +138,10 @@ class AuthModel {
       if (!accessToken) {
         throw new HttpException(403, "AccessToken is null");
       }
-      console.log(accessToken);
-      console.log(accessTokenSecret);
       const result = jwt.verify(accessToken, accessTokenSecret, (err, user) => {
         if (err) {
           throw err;
         }
-        console.log("no error")
         return user;
       });
       return(result)

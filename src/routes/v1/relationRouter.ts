@@ -5,33 +5,28 @@ import {
   adminUserOrAuthenticatedUserCheck,
   authenticateToken,
 } from "../../helper/helper";
-import {
-  indexUserRelation,
-  UserRelationSelectBoxItems,
-  indexWorkspotRelation,
-  workspotRelationSelectBoxItems,
-  newRelation,
-  deleteRelation,
-} from "../../controllers/relationController";
+import RelationController from "../../controllers/relationController";
+
+const Controller = new RelationController();
 
 router.get(
   "/user/:username",
   authenticateToken,
   adminUserOrAuthenticatedUserCheck,
-  indexUserRelation
+  Controller.indexUser
 );
 router.get(
   "/user/selectbox/:username",
   authenticateToken,
-  UserRelationSelectBoxItems
+  Controller.userSelectBoxItems
 );
-router.get("/workspot/:workspot", authenticateToken, indexWorkspotRelation);
+router.get("/workspot/:workspot", authenticateToken, Controller.indexWorkspot);
 router.get(
   "/workspot/selectbox/:workspot",
   authenticateToken,
-  workspotRelationSelectBoxItems
+  Controller.workspotSelectBoxItems
 );
-router.post("/new", authenticateToken, adminUserCheck, newRelation);
-router.post("/delete", authenticateToken, adminUserCheck, deleteRelation);
+router.post("/new", authenticateToken, adminUserCheck, Controller.new);
+router.post("/delete", authenticateToken, adminUserCheck, Controller.delete);
 
 export default router;
