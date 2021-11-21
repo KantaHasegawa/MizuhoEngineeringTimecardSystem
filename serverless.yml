@@ -25,13 +25,12 @@ package:
     - script/**
     - .git/**
     - test/**
-    - src/**
     - README.md
     - .env
 
 functions:
   timeCard:
-    handler: dist/lambda.handler
+    handler: ./src/lambda.handler
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
@@ -68,3 +67,5 @@ resources:
         TimeToLiveSpecification:
           AttributeName: "expirationTime"
           Enabled: true
+plugins:
+  - serverless-plugin-typescript

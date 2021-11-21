@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "rootDir": "./",
+    "outDir": ".build",
     "target": "ES2019",
     "module": "commonjs",
     "esModuleInterop": true,
@@ -9,11 +10,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": false
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "typeRoots": [
-    "src/@types",
-    "node_modules/@types"
-  ]
+  "include": ["./src/**/*", "src/lambda.ts"],
+  "typeRoots": ["src/@types", "node_modules/@types"]
 }
