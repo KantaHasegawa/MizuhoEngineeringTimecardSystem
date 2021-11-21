@@ -1,7 +1,9 @@
 import express from "express";
 import UserModel from "../models/user";
 import db from '../helper/dbconnect'
+import UserValidator from '../validation/userValidator'
 const Model = new UserModel(db);
+const Validator = new UserValidator(db)
 
 type RequestBody = {
   username: string;
@@ -54,6 +56,7 @@ class UserController {
     next: express.NextFunction
   ) => {
     try {
+      await Validator.signup(req.body)
       const result = await Model.create(req.body.username, req.body.password);
       res.json(result);
     } catch (err) {

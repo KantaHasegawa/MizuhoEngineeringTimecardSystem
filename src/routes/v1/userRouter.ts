@@ -1,10 +1,6 @@
 import express from "express";
 import { authenticateToken, adminUserCheck } from "../../helper/helper";
 import UserController from "../../controllers/userController";
-import {
-  signupUserValidation,
-  editUserValidation,
-} from "../../validation/userValidation";
 
 const router = express.Router();
 const Controller = new UserController();
@@ -16,14 +12,12 @@ router.post(
   "/signup",
   authenticateToken,
   adminUserCheck,
-  signupUserValidation,
   Controller.signup
 );
 router.post(
   "/edit",
   authenticateToken,
   adminUserCheck,
-  editUserValidation,
   Controller.update
 );
 router.delete(

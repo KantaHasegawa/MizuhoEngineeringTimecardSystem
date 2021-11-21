@@ -5,7 +5,6 @@ import {
   authenticateToken,
   checkUserLocation,
 } from "../../helper/helper";
-import { adminNewTimecardValidation } from "../../validation/timecardValidation";
 import TimecardController from "../../controllers/timecardController";
 
 const Controller = new TimecardController();
@@ -17,7 +16,6 @@ router.get(
   Controller.index
 );
 router.get("/latest/:username", authenticateToken, Controller.latest);
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/latestall", Controller.latestAll);
 router.get(
   "/excel/:username/:year/:month",
@@ -30,7 +28,6 @@ router.post(
   "/admin/new",
   authenticateToken,
   adminUserCheck,
-  adminNewTimecardValidation,
   Controller.new
 );
 router.post(
