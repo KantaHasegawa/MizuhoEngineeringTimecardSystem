@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import express from "express";
 import db from "../helper/dbconnect";
 import AuthModel from "../models/auth";
@@ -21,6 +18,11 @@ type LogoutRequestBody = {
   refreshToken: string;
 };
 
+export type Cookies = {
+  accessToken?: string | undefined;
+  refreshToken?: string | undefined;
+};
+
 class AuthController {
   login = async (
     req: express.Request<unknown, unknown, LoginRequestBody>,
@@ -29,13 +31,19 @@ class AuthController {
   ) => {
     try {
       const result = await Model.login(req.body.username, req.body.password);
+      res.cookie("accessToken", result.accessToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        domain: process.env.DOMAIN,
+      });
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
         sameSite: "none",
         secure: true,
         domain: process.env.DOMAIN,
       });
-      res.json({ accessToken: result.accessToken });
+      res.json({ message: "Login Success" });
     } catch (err) {
       next(err);
     }
@@ -47,8 +55,14 @@ class AuthController {
     next: express.NextFunction
   ) => {
     try {
-      const result = await Model.token(req.cookies.refreshToken);
-      res.json(result);
+      const cookies = req.cookies as Cookies;
+      const result = await Model.token(cookies.refreshToken);
+      res.cookie("accessToken", result, {
+        sameSite: "none",
+        secure: true,
+        domain: process.env.DOMAIN,
+      });
+      res.json({ message: "Refresh Success" });
     } catch (err) {
       next(err);
     }
@@ -60,8 +74,20 @@ class AuthController {
     next: express.NextFunction
   ) => {
     try {
-      console.log(req.cookies.refreshToken);
-      const result = await Model.logout(req.cookies.refreshToken);
+      const cookies = req.cookies as Cookies;
+      const result = await Model.logout(cookies.refreshToken);
+      res.cookie("accessToken", "", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        domain: process.env.DOMAIN,
+      });
+      res.cookie("refreshToken", "", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        domain: process.env.DOMAIN,
+      });
       res.json(result);
     } catch (err) {
       next(err);
@@ -74,13 +100,16 @@ class AuthController {
     next: express.NextFunction
   ) => {
     try {
-      const authHeader = req.headers["authorization"];
-      const accessToken = authHeader && authHeader.split(" ")[1];
-      const result = Model.currentuser(accessToken);
+      const cookies = req.cookies as Cookies;
+      const result = Model.currentuser(cookies.accessToken);
       res.json(result);
     } catch (err) {
       next(err);
     }
+  };
+
+  csrf = (req: express.Request, res: express.Response) => {
+    res.json({ csrfToken: req.csrfToken() });
   };
 }
 

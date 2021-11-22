@@ -71,19 +71,22 @@ class AuthModel {
     }
   };
 
-  logout = async (refreshToken: string) => {
+  logout = async (refreshToken: string | undefined) => {
     const params = {
       user: "refreshTokenBlackList",
       attendance: refreshToken,
       expirationTime: dayjs.utc().add(1, "week").unix(),
     };
     try {
-      await this.db
-        .put({
-          TableName: "Timecards",
-          Item: params,
-        })
-        .promise();
+      if (refreshToken) {
+        await this.db
+          .put({
+            TableName: "Timecards",
+            Item: params,
+          })
+          .promise();
+      }
+      return { message: "Logout Success" };
     } catch (err) {
       throw err;
     }
@@ -96,12 +99,10 @@ class AuthModel {
       ExpressionAttributeValues: { ":val": "refreshTokenBlackList" },
       KeyConditionExpression: "#u = :val",
     };
-
     try {
       if (refreshToken == null) {
         throw new HttpException(403, "RefreshToken is null");
       }
-
       const result = await documentClient.query(params).promise();
       const resultItems = result.Items as TypeTokenResponse[] | undefined;
       if (!resultItems) {
@@ -112,20 +113,16 @@ class AuthModel {
         throw new HttpException(403, "Invalid refreshToken");
       const refreshTokenSecret: jwt.Secret =
         process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret";
-      const verifiedToken = jwt.verify(refreshToken, refreshTokenSecret, (err, payload) => {
-        if (err) throw err;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (!payload?.name || !payload?.role) {
-          throw new HttpException(500, "User is not found");
-        }
-        const user = payload as TypeUserToken;
-        const accessToken = this.generateAccessToken({
-          name: user.name,
-          role: user.role,
-        });
-        return { accessToken: accessToken };
+      const verifiedToken = jwt.verify(refreshToken, refreshTokenSecret);
+      const user = verifiedToken as TypeUserToken;
+      if (!user?.name || !user?.role) {
+        throw new HttpException(500, "User is not found");
+      }
+      const accessToken = this.generateAccessToken({
+        name: user.name,
+        role: user.role,
       });
-      return(verifiedToken)
+      return accessToken;
     } catch (err) {
       throw err;
     }
@@ -138,13 +135,8 @@ class AuthModel {
       if (!accessToken) {
         throw new HttpException(403, "AccessToken is null");
       }
-      const result = jwt.verify(accessToken, accessTokenSecret, (err, user) => {
-        if (err) {
-          throw err;
-        }
-        return user;
-      });
-      return(result)
+      const result = jwt.verify(accessToken, accessTokenSecret);
+      return result;
     } catch (err) {
       throw err;
     }

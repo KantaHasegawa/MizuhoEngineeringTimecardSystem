@@ -4,6 +4,7 @@ import { GeoPosition } from "geo-position.ts";
 import documentClient from "./dbconnect";
 import HttpException from "../exceptions/HttpException";
 import { TypeUserToken } from "../controllers/authController";
+import { Cookies } from "../controllers/authController";
 
 export const errorMiddleware = (
   err: HttpException,
@@ -14,7 +15,7 @@ export const errorMiddleware = (
 ) => {
   const status = err.status || 500;
   const message = err.message || "Something went wrong";
-  console.log(err)
+  console.log(err);
   res.status(status).send({
     status,
     message,
@@ -26,8 +27,8 @@ export const authenticateToken = (
   res: express.Response,
   next: express.NextFunction
 ) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const cookies = req.cookies as Cookies;
+  const token = cookies.accessToken;
   if (token == null)
     return next(new HttpException(402, "Authentication token is null"));
   const accessTokenSecret: jwt.Secret =

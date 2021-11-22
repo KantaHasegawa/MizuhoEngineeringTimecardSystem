@@ -70,8 +70,8 @@ class TimecardController {
   ) => {
     try {
       const result = await Model.common(
-        req.params.username,
-        req.params.userLocation
+        req.user.name,
+        req.userLocation
       );
       res.json(result);
     } catch (err) {
