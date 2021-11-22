@@ -122,9 +122,7 @@ class UserModel {
       KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
     };
     try {
-      const relationResult = await this.db
-        .query(relationParams)
-        .promise();
+      const relationResult = await this.db.query(relationParams).promise();
       type TypeRelation = {
         workspot: string;
       };

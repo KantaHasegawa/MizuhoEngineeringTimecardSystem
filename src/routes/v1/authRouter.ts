@@ -7,6 +7,6 @@ router.post("/login", Controller.login);
 router.get("/logout", authenticateToken, Controller.logout);
 router.get("/refresh", Controller.token);
 router.get("/currentuser", Controller.currentuser);
-router.get("/csrf", Controller.csrf)
+router.get("/csrf", Controller.csrf);
 
 export default router;

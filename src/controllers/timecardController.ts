@@ -2,10 +2,10 @@ import express from "express";
 import db from "../helper/dbconnect";
 import lineClient from "../helper/lineSetting";
 import TimecardModel from "../models/timecard";
-import TimecardValidator from '../validation/timecardValidator'
+import TimecardValidator from "../validation/timecardValidator";
 
 const Model = new TimecardModel(db, lineClient);
-const Validator = new TimecardValidator(db)
+const Validator = new TimecardValidator(db);
 
 type NewRequestBody = {
   user: string;
@@ -69,10 +69,7 @@ class TimecardController {
     next: express.NextFunction
   ) => {
     try {
-      const result = await Model.common(
-        req.user.name,
-        req.userLocation
-      );
+      const result = await Model.common(req.user.name, req.userLocation);
       res.json(result);
     } catch (err) {
       next(err);
@@ -85,7 +82,7 @@ class TimecardController {
     next: express.NextFunction
   ) => {
     try {
-      await Validator.new(req.body)
+      await Validator.new(req.body);
       const result = await Model.new(
         req.body.user,
         req.body.workspot,

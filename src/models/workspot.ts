@@ -87,15 +87,23 @@ class Workspot {
 
       const vaildationParams = {
         TableName: "Timecards",
-        ExpressionAttributeNames: { "#u": "user", "#t": "latitude", "#g": "longitude" },
-        ExpressionAttributeValues: { ":uval": "workspot", ":tval": latitude, ":gval": longitude },
+        ExpressionAttributeNames: {
+          "#u": "user",
+          "#t": "latitude",
+          "#g": "longitude",
+        },
+        ExpressionAttributeValues: {
+          ":uval": "workspot",
+          ":tval": latitude,
+          ":gval": longitude,
+        },
         KeyConditionExpression: "#u = :uval",
         FilterExpression: "#t = :tval AND #g = :gval",
       };
 
       const validationResult = await this.db.query(vaildationParams).promise();
       if (validationResult.Items?.length) {
-        throw new HttpException(500, "この勤務地は既に登録されています")
+        throw new HttpException(500, "この勤務地は既に登録されています");
       }
 
       const params = {

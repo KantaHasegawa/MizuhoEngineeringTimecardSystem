@@ -24,12 +24,7 @@ router.get(
   Controller.excel
 );
 router.post("/common", authenticateToken, checkUserLocation, Controller.common);
-router.post(
-  "/admin/new",
-  authenticateToken,
-  adminUserCheck,
-  Controller.new
-);
+router.post("/admin/new", authenticateToken, adminUserCheck, Controller.new);
 router.post(
   "/admin/delete",
   authenticateToken,
