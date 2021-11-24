@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import HttpException from "../exceptions/HttpException";
 
 class UserModel {
   db: AWS.DynamoDB.DocumentClient;
@@ -7,7 +8,10 @@ class UserModel {
     this.db = db;
   }
 
-  get = async (name: string) => {
+  get = async (name: string | undefined) => {
+    if (!name) {
+      throw new HttpException(400, "Bad request")
+    }
     const params = {
       TableName: "Timecards",
       Key: {

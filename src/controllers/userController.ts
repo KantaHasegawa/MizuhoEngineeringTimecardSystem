@@ -16,8 +16,9 @@ class UserController {
     res: express.Response,
     next: express.NextFunction
   ) => {
+    const name = req.query.name as string | undefined;
     try {
-      const result = await Model.get(req.params.name);
+      const result = await Model.get(name);
       res.json(result);
     } catch (err) {
       next(err);

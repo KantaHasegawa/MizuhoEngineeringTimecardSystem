@@ -13,7 +13,10 @@ class Workspot {
     this.geocoder = geocoder;
   }
 
-  get = async (name: string) => {
+  get = async (name: string | undefined) => {
+    if (!name) {
+      throw new HttpException(400, "Bad request");
+    }
     const params = {
       TableName: "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#w": "workspot" },
