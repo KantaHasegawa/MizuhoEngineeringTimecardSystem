@@ -53,28 +53,6 @@ class Workspot {
     }
   };
 
-  allIDs = async () => {
-    const params = {
-      TableName: "Timecards",
-      ExpressionAttributeNames: { "#u": "user" },
-      ExpressionAttributeValues: { ":val": "workspot" },
-      KeyConditionExpression: "#u = :val",
-    };
-    try {
-      const result = await this.db.query(params).promise();
-      type TypeWorksopt = {
-        workspot: string;
-      };
-      const resultItems = result.Items as TypeWorksopt[] | undefined;
-      const response = resultItems?.map((item) => {
-        return { params: { id: item.workspot } };
-      });
-      return response;
-    } catch (err) {
-      throw err;
-    }
-  };
-
   new = async (lat: number, lon: number) => {
     try {
       const result = await this.geocoder.reverse({ lat: lat, lon: lon });

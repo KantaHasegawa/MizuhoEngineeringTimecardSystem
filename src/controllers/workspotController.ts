@@ -46,19 +46,6 @@ class WorkspotController {
     }
   };
 
-  allIDs = async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    try {
-      const result = await Model.allIDs();
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  };
-
   new = async (
     req: express.Request<unknown, unknown, NewRequestBody>,
     res: express.Response,

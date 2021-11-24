@@ -44,30 +44,6 @@ class UserModel {
     }
   };
 
-  allIDs = async () => {
-    const params = {
-      TableName: "Timecards",
-      IndexName: "usersIndex",
-      ExpressionAttributeNames: { "#a": "attendance", "#r": "role" },
-      ExpressionAttributeValues: { ":aval": "user", ":rval": "common" },
-      KeyConditionExpression: "#a = :aval",
-      FilterExpression: "#r = :rval",
-    };
-    try {
-      const result = await this.db.query(params).promise();
-      type TypeUser = {
-        user: string;
-      };
-      const resultItems = result.Items as TypeUser[] | undefined;
-      const response = resultItems?.map((item) => {
-        return { params: { id: item.user } };
-      });
-      return response;
-    } catch (err) {
-      throw err;
-    }
-  };
-
   create = async (username: string, password: string) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const params = {
