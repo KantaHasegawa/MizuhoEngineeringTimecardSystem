@@ -1,10 +1,9 @@
 import express from "express";
 import db from "../helper/dbconnect";
-import lineClient from "../helper/lineSetting";
 import TimecardModel from "../models/timecard";
 import TimecardValidator from "../validation/timecardValidator";
 
-const Model = new TimecardModel(db, lineClient);
+const Model = new TimecardModel(db);
 const Validator = new TimecardValidator(db);
 
 type NewRequestBody = {

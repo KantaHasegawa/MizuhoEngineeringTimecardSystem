@@ -1,90 +1,17 @@
-import { Client } from "@line/bot-sdk";
 import HttpException from "../exceptions/HttpException";
 import XlsxPopulate from "xlsx-populate";
 import dayjs from "dayjs";
 import "dayjs/locale/ja";
-
-type TypeCalculateWorkingTimeReturn = {
-  workTime: number;
-  leave: string;
-  rest: number;
-  regularWorkTime: number;
-  irregularWorkTime: number;
-};
-
-type TypeTimecardStatus = "NotAttend" | "NotLeave" | "AlreadyLeave";
+import calculateWorkingTime from "../helper/calculateWorkingTime";
+import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
+import pushLINE from "../helper/pushLINE";
 
 class Timecard {
   db: AWS.DynamoDB.DocumentClient;
-  lineClient: Client;
 
-  constructor(db: AWS.DynamoDB.DocumentClient, lineClient: Client) {
+  constructor(db: AWS.DynamoDB.DocumentClient) {
     this.db = db;
-    this.lineClient = lineClient;
   }
-
-  pushLINE = async (text: string) => {
-    try {
-      await this.lineClient.broadcast({
-        type: "text",
-        text: text,
-      });
-    } catch (err) {
-      throw new HttpException(500, "Failed push LINE message");
-    }
-  };
-
-  calculateWorkingTime = (
-    ArgumentAttendance: string,
-    ArgumentLeave?: string | undefined
-  ): TypeCalculateWorkingTimeReturn => {
-    const regularAttendanceTime: dayjs.Dayjs = dayjs(
-      `${ArgumentAttendance.slice(0, 8)}0800`
-    );
-    const regularLeaveTime: dayjs.Dayjs = dayjs(
-      `${ArgumentAttendance.slice(0, 8)}1700`
-    );
-    const leave: string = ArgumentLeave ?? dayjs().format("YYYYMMDDHHmmss");
-    const dayjsObjLeave: dayjs.Dayjs = dayjs(leave);
-    const dayjsObjAttendance: dayjs.Dayjs = dayjs(ArgumentAttendance);
-    const workTime: number = dayjsObjLeave.diff(dayjsObjAttendance, "minute");
-    const rest: number = workTime >= 60 ? 60 : 0;
-
-    const early: number = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
-      ? workTime
-      : regularAttendanceTime.diff(dayjsObjAttendance, "minute") > 0
-      ? regularAttendanceTime.diff(dayjsObjAttendance, "minute")
-      : 0;
-
-    const late: number = dayjsObjAttendance.isSameOrAfter(regularLeaveTime)
-      ? workTime
-      : dayjsObjLeave.diff(regularLeaveTime, "minute") > 0
-      ? dayjsObjLeave.diff(regularLeaveTime, "minute")
-      : 0;
-
-    if (workTime - rest - early - late < 0) {
-      const irregularRest: number = 0 - (workTime - rest - early - late);
-      const regularWorkTime = 0;
-      const irregularWorkTime: number = rest + early - irregularRest;
-      return {
-        workTime: workTime,
-        leave: leave,
-        rest: rest,
-        regularWorkTime: regularWorkTime,
-        irregularWorkTime: irregularWorkTime,
-      };
-    } else {
-      const irregularWorkTime: number = early + late;
-      const regularWorkTime: number = workTime - irregularWorkTime - rest;
-      return {
-        workTime: workTime,
-        leave: leave,
-        rest: rest,
-        regularWorkTime: regularWorkTime,
-        irregularWorkTime: irregularWorkTime,
-      };
-    }
-  };
 
   all = async (username: string, year: string, month: string) => {
     const params = {
@@ -141,22 +68,6 @@ class Timecard {
   };
 
   latestAll = async () => {
-    type TypeTimecard = {
-      attendance: string;
-      leave: string;
-    };
-
-    const isTimecardStatus = (timecard: TypeTimecard): TypeTimecardStatus => {
-      const today = dayjs().format("YYYYMMDD");
-      const result =
-        timecard.leave === "none"
-          ? "NotLeave"
-          : timecard.attendance.slice(0, 8) === today
-          ? "AlreadyLeave"
-          : "NotAttend";
-      return result;
-    };
-
     const userIndexParams = {
       TableName: "Timecards",
       IndexName: "usersIndex",
@@ -275,7 +186,7 @@ class Timecard {
           })
           .promise();
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.pushLINE(
+        pushLINE(
           `${user}さんが${workspot}で${attendance.slice(
             4,
             6
@@ -286,7 +197,7 @@ class Timecard {
         );
         return { message: "Insert Success" };
       } else {
-        const results = this.calculateWorkingTime(latestRecord.attendance);
+        const results = calculateWorkingTime(latestRecord.attendance);
         const user = username;
         const leave = results.leave;
         const params = {
@@ -314,7 +225,7 @@ class Timecard {
         };
         await this.db.update(params).promise();
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.pushLINE(
+        pushLINE(
           `${user}さんが${leave.slice(4, 6)}月${leave.slice(
             6,
             8
@@ -333,10 +244,7 @@ class Timecard {
     attendance: string,
     leave: string
   ) => {
-    const results: TypeCalculateWorkingTimeReturn = this.calculateWorkingTime(
-      attendance,
-      leave
-    );
+    const results = calculateWorkingTime(attendance, leave);
     const params = {
       user: user,
       attendance: attendance,

@@ -1,5 +1,5 @@
 import express from "express";
-import { adminUserCheck, authenticateToken } from "../../helper/helper";
+import { adminUserCheck, authenticateToken } from "../../helper/midleware";
 import WorkspotController from "../../controllers/workspotController";
 const router = express.Router();
 const Controller = new WorkspotController();

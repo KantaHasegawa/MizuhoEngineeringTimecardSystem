@@ -4,7 +4,7 @@ import {
   adminUserCheck,
   adminUserOrAuthenticatedUserCheck,
   authenticateToken,
-} from "../../helper/helper";
+} from "../../helper/midleware";
 import RelationController from "../../controllers/relationController";
 
 const Controller = new RelationController();

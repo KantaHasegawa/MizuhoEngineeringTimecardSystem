@@ -2,14 +2,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import documentClient from "../helper/dbconnect";
 import HttpException from "../exceptions/HttpException";
+import generateAccessToken, {
+  TypeUserToken,
+} from "../helper/generateAccessToken";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 dayjs.extend(utc);
-
-export type TypeUserToken = {
-  name: string;
-  role: string;
-};
 
 type TypeTokenResponse = {
   attendance: string;
@@ -21,12 +19,6 @@ class AuthModel {
   constructor(db: AWS.DynamoDB.DocumentClient) {
     this.db = db;
   }
-
-  generateAccessToken = (user: TypeUserToken) => {
-    const accessTokenSecret: jwt.Secret =
-      process.env.ACCESS_TOKEN_SECRET ?? "defaultaccesssecret";
-    return jwt.sign(user, accessTokenSecret, { expiresIn: "1m" });
-  };
 
   login = async (username: string, password: string) => {
     const params = {
@@ -59,7 +51,7 @@ class AuthModel {
         name: resultItem.user,
         role: resultItem.role,
       };
-      const accessToken = this.generateAccessToken(user);
+      const accessToken = generateAccessToken(user);
       const refreshTokenSecret: jwt.Secret =
         process.env.REFRESH_TOKEN_SECRET ?? "defaultrefreshsecret";
       const refreshToken = jwt.sign(user, refreshTokenSecret, {
@@ -118,7 +110,7 @@ class AuthModel {
       if (!user?.name || !user?.role) {
         throw new HttpException(500, "User is not found");
       }
-      const accessToken = this.generateAccessToken({
+      const accessToken = generateAccessToken({
         name: user.name,
         role: user.role,
       });
