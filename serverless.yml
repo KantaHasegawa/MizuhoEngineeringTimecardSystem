@@ -40,7 +40,7 @@ resources:
     timecards:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: Timecards
+        TableName: Timecards-${opt:stage}
         AttributeDefinitions:
           - AttributeName: user
             AttributeType: S
