@@ -1,10 +1,7 @@
 import express from "express";
 import geocoder from "../helper/gecorderSetting";
 import db from "../helper/dbconnect";
-import dayjs from "dayjs";
-import "dayjs/locale/ja";
 import WorkspotModel from "../models/workspot";
-dayjs.locale("ja");
 
 const Model = new WorkspotModel(db, geocoder);
 

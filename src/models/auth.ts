@@ -5,9 +5,7 @@ import HttpException from "../exceptions/HttpException";
 import generateAccessToken, {
   TypeUserToken,
 } from "../helper/generateAccessToken";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-dayjs.extend(utc);
+import dayjs from "../helper/dayjsSetting";
 
 type TypeTokenResponse = {
   attendance: string;

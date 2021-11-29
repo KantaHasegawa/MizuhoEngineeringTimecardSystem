@@ -1,5 +1,4 @@
-import dayjs from "dayjs";
-import "dayjs/locale/ja";
+import dayjs from '../helper/dayjsSetting'
 
 export type TypeTimecard = {
   attendance: string;
@@ -9,7 +8,7 @@ export type TypeTimecard = {
 type TypeTimecardStatus = "NotAttend" | "NotLeave" | "AlreadyLeave";
 
 const isTimecardStatus = (timecard: TypeTimecard): TypeTimecardStatus => {
-  const today = dayjs().format("YYYYMMDD");
+  const today = dayjs().tz().format("YYYYMMDD");
   const result =
     timecard.leave === "none"
       ? "NotLeave"

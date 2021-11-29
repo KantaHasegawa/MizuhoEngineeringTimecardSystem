@@ -1,5 +1,4 @@
-import dayjs from "dayjs";
-import "dayjs/locale/ja";
+import dayjs from "../helper/dayjsSetting";
 
 type TypeCalculateWorkingTimeReturn = {
   workTime: number;
@@ -19,7 +18,7 @@ const calculateWorkingTime = (
   const regularLeaveTime: dayjs.Dayjs = dayjs(
     `${ArgumentAttendance.slice(0, 8)}1700`
   );
-  const leave: string = ArgumentLeave ?? dayjs().format("YYYYMMDDHHmmss");
+  const leave: string = ArgumentLeave ?? dayjs().tz().format("YYYYMMDDHHmmss");
   const dayjsObjLeave: dayjs.Dayjs = dayjs(leave);
   const dayjsObjAttendance: dayjs.Dayjs = dayjs(ArgumentAttendance);
   const workTime: number = dayjsObjLeave.diff(dayjsObjAttendance, "minute");

@@ -1,14 +1,6 @@
 import Ajv from "ajv";
 import HttpException from "../exceptions/HttpException";
-import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import isLeapYear from "dayjs/plugin/isLeapYear";
-import "dayjs/locale/ja";
-dayjs.locale("ja");
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isLeapYear);
+import dayjs from '../helper/dayjsSetting'
 const ajv = new Ajv();
 
 type Timecard = {

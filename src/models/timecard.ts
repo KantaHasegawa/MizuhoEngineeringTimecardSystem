@@ -1,7 +1,6 @@
 import HttpException from "../exceptions/HttpException";
 import XlsxPopulate from "xlsx-populate";
-import dayjs from "dayjs";
-import "dayjs/locale/ja";
+import dayjs from '../helper/dayjsSetting'
 import calculateWorkingTime from "../helper/calculateWorkingTime";
 import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
 import pushLINE from "../helper/pushLINE";
@@ -167,7 +166,7 @@ class Timecard {
         : null;
       if (!latestRecord || latestRecord.leave !== "none") {
         const user = username;
-        const attendance = dayjs().format("YYYYMMDDHHmmss");
+        const attendance = dayjs().tz().format("YYYYMMDDHHmmss");
         const workspot = userLocation;
         const params = {
           user: user,
