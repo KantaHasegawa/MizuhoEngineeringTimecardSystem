@@ -17,8 +17,8 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:BatchWriteItem
       Resource:
-        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards
-        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards/index/*
+        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards-${opt:stage}
+        - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards-${opt:stage}/index/*
 
 package:
   exclude:
@@ -40,7 +40,7 @@ resources:
     timecards:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: Timecards
+        TableName: Timecards-${opt:stage}
         AttributeDefinitions:
           - AttributeName: user
             AttributeType: S

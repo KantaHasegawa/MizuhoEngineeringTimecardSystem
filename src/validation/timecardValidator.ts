@@ -109,7 +109,7 @@ class TimecardValidator {
           throw new HttpException(400, "不正な入力です");
         }
         const paramsUser = {
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Key: {
             user: data.user,
             attendance: "user",
@@ -120,7 +120,7 @@ class TimecardValidator {
           throw new HttpException(400, "ユーザーが存在しません");
         }
         const paramsWorkspot = {
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           ExpressionAttributeNames: { "#u": "user", "#w": "workspot" },
           ExpressionAttributeValues: {
             ":uval": "workspot",
@@ -134,7 +134,7 @@ class TimecardValidator {
           throw new HttpException(400, "勤務地が存在しません");
         }
         const paramsAttendance = {
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
           ExpressionAttributeValues: {
             ":userval": data.user,

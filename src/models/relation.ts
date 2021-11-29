@@ -14,7 +14,7 @@ class RleationModel {
 
   indexUser = async (username: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
       KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
@@ -29,7 +29,7 @@ class RleationModel {
 
   indexWorkspot = async (workspot: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance" },
       ExpressionAttributeValues: { ":val": `relation ${workspot}` },
@@ -45,13 +45,13 @@ class RleationModel {
 
   userSelectBoxItems = async (username: string) => {
     const relationsParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
       KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",
     };
     const workspotsParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user" },
       ExpressionAttributeValues: { ":val": "workspot" },
       KeyConditionExpression: "#u = :val",
@@ -91,14 +91,14 @@ class RleationModel {
 
   workspotSelectBoxItems = async (workspot: string) => {
     const relationsParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance" },
       ExpressionAttributeValues: { ":val": `relation ${workspot}` },
       KeyConditionExpression: "#a = :val",
     };
     const usersParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance", "#r": "role" },
       ExpressionAttributeValues: { ":aval": "user", ":rval": "common" },
@@ -143,7 +143,7 @@ class RleationModel {
       };
       await this.db
         .put({
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Item: params,
         })
         .promise();
@@ -155,7 +155,7 @@ class RleationModel {
 
   delete = async (user: string, workspot: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       Key: {
         user: user,
         attendance: `relation ${workspot}`,

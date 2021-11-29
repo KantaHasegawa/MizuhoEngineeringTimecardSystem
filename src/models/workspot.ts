@@ -18,7 +18,7 @@ class Workspot {
       throw new HttpException(400, "Bad request");
     }
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#w": "workspot" },
       ExpressionAttributeValues: {
         ":userval": "workspot",
@@ -40,7 +40,7 @@ class Workspot {
 
   all = async () => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user" },
       ExpressionAttributeValues: { ":val": "workspot" },
       KeyConditionExpression: "#u = :val",
@@ -67,7 +67,7 @@ class Workspot {
       const longitude = result[0].longitude;
 
       const vaildationParams = {
-        TableName: "Timecards",
+        TableName: process.env.TABLE_NAME || "Timecards",
         ExpressionAttributeNames: {
           "#u": "user",
           "#t": "latitude",
@@ -94,7 +94,9 @@ class Workspot {
         latitude: latitude,
         longitude: longitude,
       };
-      await this.db.put({ TableName: "Timecards", Item: params }).promise();
+      await this.db
+        .put({ TableName: process.env.TABLE_NAME || "Timecards", Item: params })
+        .promise();
       return {
         message: "Insert Success",
         workspotName: formattedAddressName,
@@ -114,7 +116,7 @@ class Workspot {
       },
     };
     const relationParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance" },
       ExpressionAttributeValues: { ":val": `relation ${workspot}` },

@@ -88,7 +88,7 @@ class Timecard {
 
   all = async (username: string, year: string, month: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: {
         ":userval": username,
@@ -107,7 +107,7 @@ class Timecard {
 
   latest = async (username: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: {
         ":userval": username,
@@ -158,7 +158,7 @@ class Timecard {
     };
 
     const userIndexParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance", "#r": "role" },
       ExpressionAttributeValues: { ":aval": "user", ":rval": "common" },
@@ -177,7 +177,7 @@ class Timecard {
         const usersResultItems = usersResult.Items as TypeUser[];
         for (const user of usersResultItems) {
           const params = {
-            TableName: "Timecards",
+            TableName: process.env.TABLE_NAME || "Timecards",
             ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
             ExpressionAttributeValues: {
               ":userval": user.user,
@@ -232,7 +232,7 @@ class Timecard {
 
   common = async (username: string, userLocation: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: {
         ":userval": username,
@@ -270,7 +270,7 @@ class Timecard {
         };
         await this.db
           .put({
-            TableName: "Timecards",
+            TableName: process.env.TABLE_NAME || "Timecards",
             Item: params,
           })
           .promise();
@@ -290,7 +290,7 @@ class Timecard {
         const user = username;
         const leave = results.leave;
         const params = {
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Key: {
             user: username,
             attendance: latestRecord.attendance,
@@ -350,7 +350,7 @@ class Timecard {
     try {
       await this.db
         .put({
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Item: params,
         })
         .promise();
@@ -361,7 +361,7 @@ class Timecard {
 
   delete = async (username: string, attendance: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       Key: {
         user: username,
         attendance: attendance,
@@ -377,7 +377,7 @@ class Timecard {
 
   excel = async (username: string, month: string, year: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: {
         ":userval": username,

@@ -13,7 +13,7 @@ class UserModel {
       throw new HttpException(400, "Bad request")
     }
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       Key: {
         user: name,
         attendance: "user",
@@ -29,7 +29,7 @@ class UserModel {
 
   all = async () => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       IndexName: "usersIndex",
       ExpressionAttributeNames: { "#a": "attendance", "#r": "role" },
       ExpressionAttributeValues: { ":aval": "user", ":rval": "common" },
@@ -55,7 +55,7 @@ class UserModel {
     try {
       await this.db
         .put({
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Item: params,
         })
         .promise();
@@ -76,7 +76,7 @@ class UserModel {
     try {
       await this.db
         .put({
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Item: params,
         })
         .promise();
@@ -96,7 +96,7 @@ class UserModel {
       },
     };
     const relationParams = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
       ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
       KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",

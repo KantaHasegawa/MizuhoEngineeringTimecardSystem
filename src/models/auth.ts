@@ -30,7 +30,7 @@ class AuthModel {
 
   login = async (username: string, password: string) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       Key: {
         user: username,
         attendance: "user",
@@ -81,7 +81,7 @@ class AuthModel {
       if (refreshToken) {
         await this.db
           .put({
-            TableName: "Timecards",
+            TableName: process.env.TABLE_NAME || "Timecards",
             Item: params,
           })
           .promise();
@@ -94,7 +94,7 @@ class AuthModel {
 
   token = async (refreshToken: string | undefined) => {
     const params = {
-      TableName: "Timecards",
+      TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user" },
       ExpressionAttributeValues: { ":val": "refreshTokenBlackList" },
       KeyConditionExpression: "#u = :val",

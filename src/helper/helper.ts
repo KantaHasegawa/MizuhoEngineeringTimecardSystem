@@ -79,7 +79,7 @@ export const checkUserLocation = async (
 ) => {
   const username: string = req.user.name;
   const params = {
-    TableName: "Timecards",
+    TableName: process.env.TABLE_NAME || "Timecards",
     ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
     ExpressionAttributeValues: { ":uval": username, ":aval": "relation" },
     KeyConditionExpression: "#u = :uval AND begins_with(#a, :aval)",

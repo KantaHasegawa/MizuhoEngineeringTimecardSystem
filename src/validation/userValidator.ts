@@ -52,7 +52,7 @@ class UserValidator {
     try {
       if (this.validateSignup(data)) {
         const params = {
-          TableName: "Timecards",
+          TableName: process.env.TABLE_NAME || "Timecards",
           Key: {
             user: data.username,
             attendance: "user",
