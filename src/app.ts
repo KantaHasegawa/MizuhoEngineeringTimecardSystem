@@ -3,7 +3,7 @@ const app: express.Express = express();
 import router from "./routes/v1/index";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { errorMiddleware } from "./helper/helper";
+import { errorMiddleware } from "./helper/midleware";
 import csrf from "csurf";
 
 const allowedOrigins = [process.env.CORS_URL || "default"];

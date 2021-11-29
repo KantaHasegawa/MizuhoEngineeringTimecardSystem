@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken, adminUserCheck } from "../../helper/helper";
+import { authenticateToken, adminUserCheck } from "../../helper/midleware";
 import UserController from "../../controllers/userController";
 
 const router = express.Router();

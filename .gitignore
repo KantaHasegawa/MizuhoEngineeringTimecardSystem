@@ -24,3 +24,4 @@ public/tmp/
 node_modules/
 scripts/
 .env
+.build/*
