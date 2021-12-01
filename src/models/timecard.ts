@@ -241,9 +241,10 @@ class Timecard {
     user: string,
     workspot: string,
     attendance: string,
-    leave: string
+    leave: string,
+    rest: number,
   ) => {
-    const results = calculateWorkingTime(attendance, leave);
+    const results = calculateWorkingTime(attendance, leave, rest);
     const params = {
       user: user,
       attendance: attendance,

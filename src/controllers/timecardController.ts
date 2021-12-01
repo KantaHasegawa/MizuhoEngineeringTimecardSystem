@@ -11,6 +11,7 @@ type NewRequestBody = {
   workspot: string;
   attendance: string;
   leave: string;
+  rest: number;
 };
 
 type DeleteRequestBody = {
@@ -86,7 +87,8 @@ class TimecardController {
         req.body.user,
         req.body.workspot,
         req.body.attendance,
-        req.body.leave
+        req.body.leave,
+        req.body.rest
       );
       res.json(result);
     } catch (err) {
