@@ -107,6 +107,7 @@ class Workspot {
   };
 
   delete = async (attendance: string, workspot: string) => {
+    const tableName = process.env.TABLE_NAME || "Timecards";
     const workspotParams = {
       DeleteRequest: {
         Key: {
@@ -145,7 +146,7 @@ class Workspot {
         requestArray.push(workspotParams);
         const requestParams = {
           RequestItems: {
-            Timecards: requestArray,
+            [tableName]: requestArray,
           },
         };
         await this.db.batchWrite(requestParams).promise();
