@@ -19,7 +19,7 @@ class UserValidator {
     properties: {
       username: {
         type: "string",
-        pattern: "^[ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]*$",
+        pattern: "^[ぁ-んァ-ヶーｱ-ﾝﾞﾟ一-龠]*$",
         maximum: 15,
       },
       password: {
