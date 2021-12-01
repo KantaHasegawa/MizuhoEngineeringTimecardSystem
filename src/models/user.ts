@@ -87,6 +87,7 @@ class UserModel {
   };
 
   delete = async (username: string) => {
+    const tableName = process.env.TABLE_NAME || "Timecards";
     const userParams = {
       DeleteRequest: {
         Key: {
@@ -123,7 +124,7 @@ class UserModel {
         requestArray.push(userParams);
         const requestParams = {
           RequestItems: {
-            Timecards: requestArray,
+            [tableName]: requestArray,
           },
         };
         await this.db.batchWrite(requestParams).promise();
