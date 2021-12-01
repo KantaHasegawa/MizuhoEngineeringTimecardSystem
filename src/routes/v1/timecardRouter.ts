@@ -9,6 +9,7 @@ import TimecardController from "../../controllers/timecardController";
 
 const Controller = new TimecardController();
 
+router.get("/show", authenticateToken, adminUserCheck, Controller.show);
 router.get(
   "/index/:username/:year/:month",
   authenticateToken,
@@ -25,11 +26,13 @@ router.get(
 );
 router.post("/common", authenticateToken, checkUserLocation, Controller.common);
 router.post("/admin/new", authenticateToken, adminUserCheck, Controller.new);
+router.post("/admin/edit", authenticateToken, adminUserCheck, Controller.edit);
 router.post(
   "/admin/delete",
   authenticateToken,
   adminUserCheck,
   Controller.delete
 );
+
 
 export default router;

@@ -20,6 +20,21 @@ type DeleteRequestBody = {
 };
 
 class TimecardController {
+  show = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const username = req.query.username as string | undefined;
+    const attendance = req.query.attendance as string | undefined;
+    try {
+      const result = await Model.get(username, attendance);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
   index = async (
     req: express.Request,
     res: express.Response,
@@ -83,6 +98,25 @@ class TimecardController {
   ) => {
     try {
       await Validator.new(req.body);
+      const result = await Model.new(
+        req.body.user,
+        req.body.workspot,
+        req.body.attendance,
+        req.body.leave,
+        req.body.rest
+      );
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  edit = async (
+    req: express.Request<unknown, unknown, NewRequestBody>,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    try {
       const result = await Model.new(
         req.body.user,
         req.body.workspot,
