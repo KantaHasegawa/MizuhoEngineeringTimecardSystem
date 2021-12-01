@@ -62,7 +62,7 @@ class AuthController {
         secure: true,
         domain: process.env.DOMAIN,
       });
-      res.json({ message: "Refresh Success" });
+      res.json({ accessToken: result });
     } catch (err) {
       next(err);
     }

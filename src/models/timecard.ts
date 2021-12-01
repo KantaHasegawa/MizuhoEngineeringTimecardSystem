@@ -1,6 +1,6 @@
 import HttpException from "../exceptions/HttpException";
 import XlsxPopulate from "xlsx-populate";
-import dayjs from '../helper/dayjsSetting'
+import dayjs from "../helper/dayjsSetting";
 import calculateWorkingTime from "../helper/calculateWorkingTime";
 import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
 import pushLINE from "../helper/pushLINE";
@@ -11,6 +11,25 @@ class Timecard {
   constructor(db: AWS.DynamoDB.DocumentClient) {
     this.db = db;
   }
+
+  get = async (username: string | undefined, attendance: string | undefined) => {
+    if (!username || !attendance) {
+      throw new HttpException(400, "Bad request");
+    }
+    const params = {
+      TableName: process.env.TABLE_NAME || "Timecards",
+      Key: {
+        user: username,
+        attendance: attendance,
+      },
+    };
+    try {
+      const result = await this.db.get(params).promise();
+      return { timecard: result.Item };
+    } catch (err) {
+      throw err;
+    }
+  };
 
   all = async (username: string, year: string, month: string) => {
     const params = {
@@ -242,7 +261,7 @@ class Timecard {
     workspot: string,
     attendance: string,
     leave: string,
-    rest: number,
+    rest: number
   ) => {
     const results = calculateWorkingTime(attendance, leave, rest);
     const params = {
