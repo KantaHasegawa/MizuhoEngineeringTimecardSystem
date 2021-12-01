@@ -14,7 +14,7 @@ const options: cors.CorsOptions = {
 };
 
 const csrfProtection = csrf({
-  cookie: true,
+  cookie: { maxAge: 86400000 },
 });
 
 app.use(cors(options));
