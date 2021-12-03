@@ -4,6 +4,7 @@ import dayjs from "../helper/dayjsSetting";
 import calculateWorkingTime from "../helper/calculateWorkingTime";
 import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
 import pushLINE from "../helper/pushLINE";
+import path from "path";
 
 class Timecard {
   db: AWS.DynamoDB.DocumentClient;
@@ -12,7 +13,10 @@ class Timecard {
     this.db = db;
   }
 
-  get = async (username: string | undefined, attendance: string | undefined) => {
+  get = async (
+    username: string | undefined,
+    attendance: string | undefined
+  ) => {
     if (!username || !attendance) {
       throw new HttpException(400, "Bad request");
     }
@@ -302,7 +306,7 @@ class Timecard {
     }
   };
 
-  excel = async (username: string, month: string, year: string) => {
+  excel = async (username: string, year: string, month: string) => {
     const params = {
       TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
@@ -314,9 +318,13 @@ class Timecard {
         "#u = :userval AND begins_with(#a, :attendanceval)",
     };
     try {
-      const workbook = await XlsxPopulate.fromFileAsync(
-        "public/timecard_template.xlsx"
-      );
+      const templatePath =
+        process.env.NODE_ENV === "production"
+          ? `${
+              process.env.LAMBDA_TASK_ROOT || "/var/task"
+            }/public/timecard_template.xlsx`
+          : path.join(__dirname, "../../public", "timecard_template.xlsx");
+      const workbook = await XlsxPopulate.fromFileAsync(templatePath);
       const sheet1 = workbook.sheet("Sheet1");
       const results = await this.db.query(params).promise();
       type TypeTimecard = {
