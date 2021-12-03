@@ -21,6 +21,8 @@ provider:
         - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards-${opt:stage}/index/*
 
 package:
+  include:
+    - public/**
   exclude:
     - script/**
     - .git/**
