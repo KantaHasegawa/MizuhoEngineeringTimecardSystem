@@ -73,10 +73,7 @@ class RleationModel {
               ({ workspot }) => workspot === item.workspot
             )
           ) {
-            return {
-              value: item.workspot,
-              label: item.workspot,
-            };
+            return item.workspot;
           }
         })
         .filter((item) => item);
@@ -115,10 +112,7 @@ class RleationModel {
       const selectBoxItems = usersResultItems
         ?.map((item) => {
           if (!relationsResult.Items?.find(({ user }) => user === item.user)) {
-            return {
-              value: item.user,
-              label: item.user,
-            };
+            return item.user;
           }
         })
         .filter((item) => item);
