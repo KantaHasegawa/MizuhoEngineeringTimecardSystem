@@ -1,4 +1,4 @@
-import dayjs from '../helper/dayjsSetting'
+import dayjs from "../helper/dayjsSetting";
 
 export type TypeTimecard = {
   attendance: string;

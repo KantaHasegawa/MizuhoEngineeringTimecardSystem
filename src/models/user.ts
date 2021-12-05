@@ -10,7 +10,7 @@ class UserModel {
 
   get = async (name: string | undefined) => {
     if (!name) {
-      throw new HttpException(400, "Bad request")
+      throw new HttpException(400, "Bad request");
     }
     const params = {
       TableName: process.env.TABLE_NAME || "Timecards",
