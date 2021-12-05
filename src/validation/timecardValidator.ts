@@ -1,6 +1,6 @@
 import Ajv from "ajv";
 import HttpException from "../exceptions/HttpException";
-import dayjs from '../helper/dayjsSetting'
+import dayjs from "../helper/dayjsSetting";
 const ajv = new Ajv();
 
 type Timecard = {

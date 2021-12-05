@@ -5,15 +5,12 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { errorMiddleware } from "./helper/midleware";
 
-
-
 const allowedOrigins = [process.env.CORS_URL || "default"];
 
 const options: cors.CorsOptions = {
   origin: allowedOrigins,
   credentials: true,
 };
-
 
 app.use(cors(options));
 
