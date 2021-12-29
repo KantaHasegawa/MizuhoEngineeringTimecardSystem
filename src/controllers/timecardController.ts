@@ -148,11 +148,13 @@ class TimecardController {
     res: express.Response,
     next: express.NextFunction
   ) => {
+    const isMobile = req.params.isMobile === "true" ? true : false
     try {
       const result = await Model.excel(
         req.params.username,
         req.params.year,
-        req.params.month
+        req.params.month,
+        isMobile
       );
       res.json(result);
     } catch (err) {
