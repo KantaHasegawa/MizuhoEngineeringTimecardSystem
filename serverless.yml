@@ -4,7 +4,7 @@ service: mizuho-timecard
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   region: ap-northeast-1
   iamRoleStatements:
     - Effect: Allow
@@ -19,6 +19,13 @@ provider:
       Resource:
         - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards-${opt:stage}
         - arn:aws:dynamodb:${self:provider.region}:*:table/Timecards-${opt:stage}/index/*
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+      Resource: arn:aws:s3:::mizuhotimecardsystem-excel-bucket/*
 
 package:
   include:
@@ -69,5 +76,10 @@ resources:
         TimeToLiveSpecification:
           AttributeName: "expirationTime"
           Enabled: true
+    Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: mizuhotimecardsystem-excel-bucket
+
 plugins:
   - serverless-plugin-typescript

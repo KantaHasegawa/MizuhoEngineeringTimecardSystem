@@ -20,7 +20,7 @@ router.get(
 router.get("/latest/:username", authenticateToken, Controller.latest);
 router.get("/latestall", Controller.latestAll);
 router.get(
-  "/excel/:username/:year/:month",
+  "/excel/:username/:year/:month/:isMobile",
   authenticateToken,
   adminUserCheck,
   Controller.excel

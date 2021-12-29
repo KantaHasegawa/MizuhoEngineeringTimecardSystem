@@ -5,6 +5,8 @@ import calculateWorkingTime from "../helper/calculateWorkingTime";
 import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
 import pushLINE from "../helper/pushLINE";
 import path from "path";
+import s3GenerateURL from "../helper/s3GenerateURL";
+import * as fs from "fs/promises";
 
 class Timecard {
   db: AWS.DynamoDB.DocumentClient;
@@ -306,7 +308,12 @@ class Timecard {
     }
   };
 
-  excel = async (username: string, year: string, month: string) => {
+  excel = async (
+    username: string,
+    year: string,
+    month: string,
+    isMobile: boolean
+  ) => {
     const params = {
       TableName: process.env.TABLE_NAME || "Timecards",
       ExpressionAttributeNames: { "#u": "user", "#a": "attendance" },
@@ -318,13 +325,14 @@ class Timecard {
         "#u = :userval AND begins_with(#a, :attendanceval)",
     };
     try {
-      const templatePath =
+      const basePath =
         process.env.NODE_ENV === "production"
-          ? `${
-              process.env.LAMBDA_TASK_ROOT || "/var/task"
-            }/public/timecard_template.xlsx`
-          : path.join(__dirname, "../../public", "timecard_template.xlsx");
-      const workbook = await XlsxPopulate.fromFileAsync(templatePath);
+          ? `${process.env.LAMBDA_TASK_ROOT || "/var/task"}/public`
+          : path.join(__dirname, "../../public");
+
+      const workbook = await XlsxPopulate.fromFileAsync(
+        `${basePath}/timecard_template.xlsx`
+      );
       const sheet1 = workbook.sheet("Sheet1");
       const results = await this.db.query(params).promise();
       type TypeTimecard = {
@@ -347,8 +355,31 @@ class Timecard {
         sheet1.cell(`D${row}`).value(timecard.irregularWorkTime);
         sheet1.cell(`E${row}`).value(timecard.rest);
       }
-      const encodedWorkbook = await workbook.outputAsync("base64");
-      return encodedWorkbook;
+      if (isMobile) {
+        const filePath =
+          process.env.NODE_ENV === "development"
+            ? `${basePath}/${year}年${month}月${username}.xlsx`
+            : `/tmp/${year}年${month}月${username}.xlsx`;
+        try {
+          await workbook.toFileAsync(
+            filePath
+          );
+          const item = await fs.readFile(
+            filePath
+          );
+          const url = await s3GenerateURL(
+            `${year}年${month}月${username}.xlsx`,
+            item
+          );
+          return url;
+        } catch (err) {
+          console.log(err);
+          throw err;
+        }
+      } else {
+        const encodedWorkbook = await workbook.outputAsync("base64");
+        return encodedWorkbook;
+      }
     } catch (err) {
       throw err;
     }
