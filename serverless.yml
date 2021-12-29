@@ -25,7 +25,7 @@ provider:
         - "s3:GetObject"
         - "s3:PutObject"
         - "s3:DeleteObject"
-      Resource: arn:aws:s3:::mizuhotimecardsystem-excel-bucket/*
+      Resource: arn:aws:s3:::mizuhotimecardsystem-excel-bucket-${opt:stage}/*
 
 package:
   include:
@@ -79,7 +79,7 @@ resources:
     Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: mizuhotimecardsystem-excel-bucket
+        BucketName: mizuhotimecardsystem-excel-bucket-${opt:stage}
 
 plugins:
   - serverless-plugin-typescript
