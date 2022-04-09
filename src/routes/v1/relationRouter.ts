@@ -6,7 +6,6 @@ import {
   authenticateToken,
 } from "../../helper/midleware";
 import RelationController from "../../controllers/relationController";
-import csrfProtection from "../../helper/csurfSetting";
 
 const Controller = new RelationController();
 
@@ -29,16 +28,12 @@ router.get(
 );
 router.post(
   "/new",
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  csrfProtection,
   authenticateToken,
   adminUserCheck,
   Controller.new
 );
 router.post(
   "/delete",
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  csrfProtection,
   authenticateToken,
   adminUserCheck,
   Controller.delete
