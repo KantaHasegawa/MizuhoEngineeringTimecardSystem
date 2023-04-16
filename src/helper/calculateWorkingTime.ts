@@ -14,7 +14,7 @@ const calculateWorkingTime = (
   ArgumentRest?: number | undefined
 ): TypeCalculateWorkingTimeReturn => {
   const regularAttendanceTime = dayjs(
-    `${ArgumentAttendance.slice(0, 8)}0800`
+    `${ArgumentAttendance.slice(0, 8)}0730`
   ).tz();
   const regularLeaveTime = dayjs(`${ArgumentAttendance.slice(0, 8)}1700`).tz();
   const leave = ArgumentLeave ?? dayjs().tz().format("YYYYMMDDHHmmss");
