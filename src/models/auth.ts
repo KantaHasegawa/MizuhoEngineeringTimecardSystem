@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import documentClient from "../helper/dbconnect";
 import HttpException from "../exceptions/HttpException";
@@ -19,6 +19,7 @@ class AuthModel {
   }
 
   login = async (username: string, password: string) => {
+    console.log('ろぐいん！！')
     const params = {
       TableName: process.env.TABLE_NAME || "Timecards",
       Key: {
@@ -38,6 +39,7 @@ class AuthModel {
       };
       const resultItem = result.Item as TypeUserResponse;
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       const comparedPassword = await bcrypt.compare(
         password,
         resultItem.password
