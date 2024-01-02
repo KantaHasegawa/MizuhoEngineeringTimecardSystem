@@ -6,6 +6,13 @@ import HttpException from "../exceptions/HttpException";
 import { TypeUserToken } from "../controllers/authController";
 import { Cookies } from "../controllers/authController";
 
+declare module 'express-serve-static-core' {
+  interface Request {
+    user: TypeUserToken;
+    userLocation: string;
+  }
+}
+
 export const errorMiddleware = (
   err: HttpException,
   req: express.Request,

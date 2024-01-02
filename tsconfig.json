@@ -11,5 +11,6 @@
     "noUnusedParameters": false
   },
   "include": ["./src/**/*", "src/lambda.ts"],
+  "exclude": ["./src/scripts/*"],
   "typeRoots": ["src/@types", "node_modules/@types"]
 }
