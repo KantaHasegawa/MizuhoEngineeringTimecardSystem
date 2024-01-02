@@ -87,7 +87,7 @@ class Timecard {
       const avgIrregularWorkTime = calculateAvgIrregularWorkTime(cols);
       const items = cols.map((col) => {
         const early = calculateEarly(col.attendance);
-        const late = calculateLate(col.leave);
+        const late = calculateLate(col.attendance, col.leave);
         return {
           ...col,
           early,

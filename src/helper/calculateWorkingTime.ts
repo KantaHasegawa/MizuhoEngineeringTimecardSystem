@@ -70,11 +70,11 @@ export const calculateEarly = (attendance: string) => {
   return early;
 }
 
-export const calculateLate = (leave: string) => {
+export const calculateLate = (attendance: string, leave: string) => {
   if (leave === "none") {
     return 0;
   }
-  const regularLeaveTime = dayjs(`${leave.slice(0, 8)}1700`).tz();
+  const regularLeaveTime = dayjs(`${attendance.slice(0, 8)}1700`).tz();
   const dayjsObjLeave = dayjs(leave).tz();
   const late = dayjsObjLeave.diff(regularLeaveTime, "minute")
   return late;
