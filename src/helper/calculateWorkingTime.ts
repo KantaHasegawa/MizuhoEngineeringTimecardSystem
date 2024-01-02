@@ -1,4 +1,5 @@
 import dayjs from "../helper/dayjsSetting";
+import { TimecardRow } from "../models/timecard";
 
 type TypeCalculateWorkingTimeReturn = {
   workTime: number;
@@ -8,7 +9,7 @@ type TypeCalculateWorkingTimeReturn = {
   irregularWorkTime: number;
 };
 
-const calculateWorkingTime = (
+export const calculateWorkingTime = (
   ArgumentAttendance: string,
   ArgumentLeave?: string | undefined,
   ArgumentRest?: number | undefined
@@ -18,6 +19,7 @@ const calculateWorkingTime = (
   ).tz();
   const regularLeaveTime = dayjs(`${ArgumentAttendance.slice(0, 8)}1700`).tz();
   const leave = ArgumentLeave ?? dayjs().tz().format("YYYYMMDDHHmmss");
+  console.log(leave)
   const dayjsObjLeave = dayjs(leave).tz();
   const dayjsObjAttendance = dayjs(ArgumentAttendance).tz();
   const workTime = dayjsObjLeave.diff(dayjsObjAttendance, "minute");
@@ -59,4 +61,60 @@ const calculateWorkingTime = (
   }
 };
 
-export default calculateWorkingTime;
+export const calculateEarly = (attendance: string) => {
+  const regularAttendanceTime = dayjs(
+    `${attendance.slice(0, 8)}0730`
+  ).tz();
+  const dayjsObjAttendance = dayjs(attendance).tz();
+  const early = regularAttendanceTime.diff(dayjsObjAttendance, "minute")
+  return early;
+}
+
+export const calculateLate = (leave: string) => {
+  if (leave === "none") {
+    return 0;
+  }
+  const regularLeaveTime = dayjs(`${leave.slice(0, 8)}1700`).tz();
+  const dayjsObjLeave = dayjs(leave).tz();
+  const late = dayjsObjLeave.diff(regularLeaveTime, "minute")
+  return late;
+}
+
+export const calculateAttendanceCount = (args: TimecardRow[]) => {
+  let count = 0;
+  args.forEach((arg) => {
+    if (arg.attendance !== "none") {
+      count++;
+    }
+  });
+  return count;
+}
+
+export const calculateSumRegularWorkTime = (args: TimecardRow[]) => {
+  let sumRegularWorkTime = 0;
+  args.forEach((arg) => {
+    sumRegularWorkTime += arg.regularWorkTime;
+  });
+  return sumRegularWorkTime;
+};
+
+export const calculateSumIrregularWorkTime = (args: TimecardRow[]) => {
+  let sumIrregularWorkTime = 0;
+  args.forEach((arg) => {
+    sumIrregularWorkTime += arg.irregularWorkTime;
+  });
+  return sumIrregularWorkTime;
+}
+
+export const calculateAvgIrregularWorkTime = (args: TimecardRow[]) => {
+  let sum = 0;
+  let count = 0;
+  for (const arg of args) {
+    if (arg.leave === "none") {
+      continue;
+    }
+    sum += arg.irregularWorkTime;
+    count++;
+  }
+  return sum / count;
+};

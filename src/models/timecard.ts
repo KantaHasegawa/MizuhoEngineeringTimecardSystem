@@ -1,12 +1,42 @@
 import HttpException from "../exceptions/HttpException";
 import XlsxPopulate from "xlsx-populate";
 import dayjs from "../helper/dayjsSetting";
-import calculateWorkingTime from "../helper/calculateWorkingTime";
+import {calculateWorkingTime, calculateSumRegularWorkTime, calculateSumIrregularWorkTime, calculateAvgIrregularWorkTime, calculateEarly, calculateLate, calculateAttendanceCount} from "../helper/calculateWorkingTime";
 import isTimecardStatus, { TypeTimecard } from "../helper/isTimecardStatus";
 import pushLINE from "../helper/pushLINE";
 import path from "path";
 import s3GenerateURL from "../helper/s3GenerateURL";
 import * as fs from "fs/promises";
+
+export type TimecardRow = {
+  rest: number,
+  workspot: string,
+  irregularWorkTime: number,
+  leave: string,
+  user: string,
+  workTime: number,
+  attendance: string,
+  regularWorkTime: number,
+}
+
+type allRes = {
+  attendanceCount: number,
+  sumRegularWorkTime: number,
+  sumIrregularWorkTime: number,
+  avgIrregularWorkTime: number,
+  items: {
+    rest: number;
+    workspot: string;
+    irregularWorkTime: number;
+    leave: string;
+    user: string;
+    workTime: number;
+    attendance: string;
+    regularWorkTime: number;
+    early: number;
+    late: number;
+  }[]
+}
 
 class Timecard {
   db: AWS.DynamoDB.DocumentClient;
@@ -50,7 +80,28 @@ class Timecard {
     };
     try {
       const result = await this.db.query(params).promise();
-      return result.Items;
+      const cols = result.Items as TimecardRow[];
+      const attendanceCount = calculateAttendanceCount(cols);
+      const sumRegularWorkTime = calculateSumRegularWorkTime(cols);
+      const sumIrregularWorkTime = calculateSumIrregularWorkTime(cols);
+      const avgIrregularWorkTime = calculateAvgIrregularWorkTime(cols);
+      const items = cols.map((col) => {
+        const early = calculateEarly(col.attendance);
+        const late = calculateLate(col.leave);
+        return {
+          ...col,
+          early,
+          late,
+        };
+      });
+      const res: allRes = {
+        attendanceCount,
+        sumRegularWorkTime,
+        sumIrregularWorkTime,
+        avgIrregularWorkTime,
+        items,
+      };
+      return res;
     } catch (err) {
       throw err;
     }
