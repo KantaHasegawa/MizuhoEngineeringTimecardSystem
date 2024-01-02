@@ -21,7 +21,7 @@ const calculateWorkingTime = (
   const dayjsObjLeave = dayjs(leave).tz();
   const dayjsObjAttendance = dayjs(ArgumentAttendance).tz();
   const workTime = dayjsObjLeave.diff(dayjsObjAttendance, "minute");
-  const rest = ArgumentRest ? ArgumentRest : workTime >= 60 ? 60 : 0;
+  const rest = ArgumentRest ? ArgumentRest : workTime >= 90 ? 90 : 0;
 
   const early = dayjsObjLeave.isSameOrBefore(regularAttendanceTime)
     ? workTime
